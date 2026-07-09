@@ -1,0 +1,6 @@
+interface:
+  display_name: "Charlie's Workflow"
+  short_description: "Plan, build, verify, document, and draft PRs"
+  default_prompt: "Use $charlies-workflow to plan, implement, test, document, and open a draft PR for this feature."
+policy:
+  allow_implicit_invocation: false

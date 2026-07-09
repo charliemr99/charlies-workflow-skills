@@ -1,0 +1,112 @@
+{
+  "name": "charlies-workflow-skills",
+  "owner": "charliemr99",
+  "visibility": "public",
+  "description": "Vendored Agent Skills package for Charlie's development workflow.",
+  "skills": [
+    {
+      "name": "charlies-workflow",
+      "category": "workflow",
+      "ownership": "charlie-owned",
+      "upstream": null,
+      "source_path": "/Users/charliemartinez/.codex/skills/charlies-workflow",
+      "notes": "Explicit-only workflow orchestrator."
+    },
+    {
+      "name": "emil-design-eng",
+      "category": "ui-ux",
+      "ownership": "charlie-owned",
+      "upstream": null,
+      "source_path": "/Users/charliemartinez/.agents/skills/emil-design-eng",
+      "notes": "Design engineering and UI polish guidance."
+    },
+    {
+      "name": "ui-ux-pro-max",
+      "category": "ui-ux",
+      "ownership": "charlie-owned",
+      "upstream": null,
+      "source_path": "/Users/charliemartinez/.codex/skills/ui-ux-pro-max",
+      "notes": "UI/UX design intelligence and local lookup resources."
+    },
+    {
+      "name": "doc-it",
+      "category": "documentation",
+      "ownership": "charlie-owned",
+      "upstream": null,
+      "source_path": "/Users/charliemartinez/.codex/skills/doc-it",
+      "notes": "Documentation update guidance."
+    },
+    {
+      "name": "pr-title-and-description",
+      "category": "github",
+      "ownership": "charlie-owned",
+      "upstream": null,
+      "source_path": "/Users/charliemartinez/.codex/skills/pr-title-and-description",
+      "notes": "PR title and body generation guidance."
+    },
+    {
+      "name": "playwright",
+      "category": "browser",
+      "ownership": "third-party-derived",
+      "upstream": "microsoft/playwright-cli",
+      "source_path": "/Users/charliemartinez/.codex/skills/playwright",
+      "notes": "Apache-2.0 license and notice preserved in skill folder."
+    },
+    {
+      "name": "playwright-interactive",
+      "category": "browser",
+      "ownership": "third-party-derived",
+      "upstream": "microsoft/playwright-cli",
+      "source_path": "/Users/charliemartinez/.codex/skills/playwright-interactive",
+      "notes": "Apache-2.0 license and notice preserved in skill folder."
+    },
+    {
+      "name": "brainstorming",
+      "category": "superpowers",
+      "ownership": "third-party",
+      "upstream": "superpowers@6.1.1",
+      "source_path": "/Users/charliemartinez/.codex/plugins/cache/openai-curated-remote/superpowers/6.1.1/skills/brainstorming",
+      "notes": "MIT license notice preserved in THIRD_PARTY_NOTICES.md."
+    },
+    {
+      "name": "writing-plans",
+      "category": "superpowers",
+      "ownership": "third-party",
+      "upstream": "superpowers@6.1.1",
+      "source_path": "/Users/charliemartinez/.codex/plugins/cache/openai-curated-remote/superpowers/6.1.1/skills/writing-plans",
+      "notes": "MIT license notice preserved in THIRD_PARTY_NOTICES.md."
+    },
+    {
+      "name": "test-driven-development",
+      "category": "superpowers",
+      "ownership": "third-party",
+      "upstream": "superpowers@6.1.1",
+      "source_path": "/Users/charliemartinez/.codex/plugins/cache/openai-curated-remote/superpowers/6.1.1/skills/test-driven-development",
+      "notes": "MIT license notice preserved in THIRD_PARTY_NOTICES.md."
+    },
+    {
+      "name": "using-git-worktrees",
+      "category": "superpowers",
+      "ownership": "third-party",
+      "upstream": "superpowers@6.1.1",
+      "source_path": "/Users/charliemartinez/.codex/plugins/cache/openai-curated-remote/superpowers/6.1.1/skills/using-git-worktrees",
+      "notes": "MIT license notice preserved in THIRD_PARTY_NOTICES.md."
+    },
+    {
+      "name": "executing-plans",
+      "category": "superpowers",
+      "ownership": "third-party",
+      "upstream": "superpowers@6.1.1",
+      "source_path": "/Users/charliemartinez/.codex/plugins/cache/openai-curated-remote/superpowers/6.1.1/skills/executing-plans",
+      "notes": "MIT license notice preserved in THIRD_PARTY_NOTICES.md."
+    },
+    {
+      "name": "subagent-driven-development",
+      "category": "superpowers",
+      "ownership": "third-party",
+      "upstream": "superpowers@6.1.1",
+      "source_path": "/Users/charliemartinez/.codex/plugins/cache/openai-curated-remote/superpowers/6.1.1/skills/subagent-driven-development",
+      "notes": "MIT license notice preserved in THIRD_PARTY_NOTICES.md."
+    }
+  ]
+}
