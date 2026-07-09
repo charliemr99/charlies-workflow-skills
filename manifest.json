@@ -1,6 +1,7 @@
 {
   "name": "charlies-workflow-skills",
   "owner": "charliemr99",
+  "creator": "GreenByte Studios",
   "visibility": "public",
   "description": "Vendored Agent Skills package for Charlie's development workflow.",
   "skills": [

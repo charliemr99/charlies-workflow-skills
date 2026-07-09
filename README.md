@@ -1,8 +1,27 @@
+<p align="center">
+  <img src="assets/greenbyte_logo.png" alt="GreenByte Studios logo" width="96">
+</p>
+
 # Charlie's Workflow Skills
 
 Reusable Agent Skills for Charlie's end-to-end development workflow.
 
-This repository vendors `charlies-workflow` and the companion skills it expects so an AI coding agent can plan, ask questions, write a spec, create an implementation plan, use TDD, verify in browser when relevant, document the work, and prepare draft PRs without relying on Charlie's local skill folders.
+Created by GreenByte Studios.
+
+This repository vendors the Agent Skills used by GreenByte Studios for Charlie's development workflow. The bundle centers on `charlies-workflow`, plus the companion skills it expects so an AI coding agent can plan, ask questions, write a spec, create an implementation plan, use TDD, verify in browser when relevant, document the work, and prepare draft PRs without relying on Charlie's local skill folders.
+
+## What These Skills Are
+
+Agent Skills are folders with a `SKILL.md` file and optional scripts, references, assets, and harness metadata. AI coding agents load them on demand to follow a repeatable workflow instead of making every process decision from scratch.
+
+This package is the workflow skill set GreenByte Studios uses for feature work:
+
+- `charlies-workflow` is the main orchestrator.
+- Superpowers-derived skills handle brainstorming, specs, implementation plans, TDD, worktrees, and execution.
+- UI/UX skills support design quality, responsive review, and browser verification.
+- Documentation and PR skills help produce final reports and draft PR metadata.
+
+The result is a portable skills bundle you can install into your preferred AI agent harness.
 
 ## Included Skills
 
@@ -13,7 +32,7 @@ This repository vendors `charlies-workflow` and the companion skills it expects 
 
 `charlies-workflow` is explicit-only in Codex through `skills/charlies-workflow/agents/openai.yaml`.
 
-## Install
+## Install in Your Preferred Harness
 
 Clone the repo:
 
@@ -28,7 +47,7 @@ Dry-run first:
 ./scripts/install.sh --dry-run
 ```
 
-Install for a harness:
+Install globally for a supported harness:
 
 ```bash
 # Codex personal skills, matching Charlie's current setup
@@ -39,6 +58,13 @@ Install for a harness:
 
 # Cursor personal skills
 ./scripts/install.sh --harness cursor
+```
+
+Alternative Codex user scope:
+
+```bash
+# Codex official user-scope location
+./scripts/install.sh --harness codex-agents
 ```
 
 Project-scoped installs are also supported:
