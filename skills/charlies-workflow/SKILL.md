@@ -280,6 +280,21 @@ updated, what they now cover, documentation validation evidence, and remaining
 gaps. For `current` or `not-needed`, include the inspected canonical paths and
 the rationale. Never link temporary specs or plans.
 
+Preserve this exact slot in every final report:
+
+```text
+Documentation
+- Status: changed | current | not-needed | declined-with-gap
+- Canonical files: <created, updated, or inspected paths>
+- Coverage: <durable behavior documented or reason no change was needed>
+- Validation: <command or manual source evidence>
+- Remaining gaps: none | <explicit gaps>
+```
+
+Before sending the final response, verify that all five labels appear. A single
+documentation link or summary bullet does not satisfy this contract. If any
+label is missing, rewrite the report before sending it.
+
 ## 10. Draft PR and External Checks
 
 Create a draft PR by default after the final verification unless the user opts out.
@@ -318,6 +333,7 @@ All tiers require:
 - One consolidated review when review is useful.
 - One final proportional verification after the final diff.
 - Honest reporting and a draft PR attempt unless opted out or blocked.
+- The final chat report contains the complete five-label `Documentation` slot.
 
 Medium and complex work additionally require proportional temporary spec/plan
 artifacts during execution, not in the final PR. Meaningful UI work requires
@@ -338,6 +354,7 @@ workflow completion when reported accurately.
 | Mentioning `doc-it` without resolving canonical docs | Inspect affected docs and symlinks, then record the target and action in the documentation delta |
 | Creating a new page by default | Update the canonical section first; create a page only for a distinct audience, owner, or lifecycle |
 | Claiming docs are complete without checking references | Validate links, commands, paths, config identifiers, and examples against final source |
+| Collapsing documentation evidence into one link or bullet | Rewrite the final report with Status, Canonical files, Coverage, Validation, and Remaining gaps |
 | Running full tests after every edit | Use narrow RED/GREEN and the verification ledger |
 | Reviewer repeats all verification | Reuse evidence; run only missing or suspect checks |
 | Reviewing after every adjustment | Run one consolidated review and targeted rechecks |
