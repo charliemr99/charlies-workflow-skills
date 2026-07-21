@@ -8,7 +8,7 @@ Reusable Agent Skills for Charlie's end-to-end development workflow.
 
 Created by GreenByte Studios.
 
-This repository vendors the Agent Skills used by GreenByte Studios for Charlie's development workflow. The bundle centers on `charlies-workflow`, plus the companion skills it expects so an AI coding agent can plan, ask questions, write a spec, create an implementation plan, use TDD, verify in browser when relevant, document the work, and prepare draft PRs without relying on Charlie's local skill folders.
+This repository vendors the Agent Skills used by GreenByte Studios for Charlie's development workflow. The bundle centers on `charlies-workflow`, plus the companion skills it expects so an AI coding agent can inspect the real repo, scale planning rigor to task risk, use TDD, verify in browser when relevant, document durable behavior, and prepare draft PRs without relying on Charlie's local skill folders.
 
 ## What These Skills Are
 
@@ -17,7 +17,7 @@ Agent Skills are folders with a `SKILL.md` file and optional scripts, references
 This package is the workflow skill set GreenByte Studios uses for feature work:
 
 - `charlies-workflow` is the main orchestrator.
-- Superpowers-derived skills handle brainstorming, specs, implementation plans, TDD, worktrees, and execution.
+- Superpowers-derived skills handle brainstorming, specs, implementation plans, TDD, worktrees, and execution when the task calls for them.
 - UI/UX skills support design quality, responsive review, and browser verification.
 - Documentation and PR skills help produce final reports and draft PR metadata.
 
@@ -105,14 +105,16 @@ $charlies-workflow Please plan and implement this feature end to end.
 Typical expectation:
 
 1. Inspect repo context.
-2. Brainstorm and ask feature-specific questions.
-3. Produce a Superpowers-style spec.
-4. Wait for spec approval.
-5. Create an implementation plan from the approved spec.
-6. Implement with TDD.
-7. Verify with automated and browser checks when relevant.
-8. Run responsive UI/UX review for UI changes.
-9. Report results and prepare a draft PR when GitHub work is in scope.
+2. Classify the task as small, medium, or complex.
+3. Ask once whether to execute inline or with subagents when the user has not already chosen.
+4. Scale planning rigor: small tasks use a short implementation brief; medium and complex tasks use a temporary spec and implementation plan with approval gates.
+5. Implement with focused TDD.
+6. Keep a compact verification ledger and run one proportional final verification.
+7. Combine functional and visual browser QA into one final browser session when UI is in scope.
+8. Remove temporary workflow artifacts before publication.
+9. Report outcomes and prepare a draft PR when GitHub work is in scope.
+
+Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR.
 
 ## Validate
 

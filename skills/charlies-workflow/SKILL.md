@@ -7,213 +7,287 @@ description: Use when the user explicitly invokes $charlies-workflow for a non-t
 
 ## Overview
 
-Run Charlie's preferred feature workflow end to end: select relevant skills, understand the repo, plan with Superpowers, implement with TDD, verify thoroughly, document the change, and open a draft PR by default.
+Run Charlie's preferred delivery workflow with rigor proportional to scope and risk. Inspect the real repository, choose an execution mode with the user, implement with TDD, verify the final diff once, and create a draft PR by default.
 
-This skill is opt-in only. Use it when the user explicitly invokes `$charlies-workflow`; do not infer it from ordinary coding requests.
+This skill is opt-in only. Use it only when the user explicitly invokes `$charlies-workflow`.
 
-## Required Flow
+## Core Principles
 
-### 1. Select Skills First
+- Scale ceremony, documentation, tests, review, and browser coverage to risk.
+- Load the minimum useful skills; never load every possible skill just in case.
+- Ask once whether to execute inline or with subagents, unless the user already chose.
+- Use subagents for bounded independent work, not as approval ceremonies.
+- Maintain one verification ledger and one consolidated final review.
+- Treat CI and other external reviewers as asynchronous unless the user asks to wait.
 
-Before planning or editing, identify the skills that match the task and load them.
+## 1. Select Minimal Skills
 
-Always consider:
-- `brainstorming` / `superpowers:brainstorming` for feature shaping, UI/product decisions, ambiguous requirements, or when the prompt is not decision-complete.
-- `writing-plans` / `superpowers:writing-plans` for the implementation plan after the spec is approved.
-- `test-driven-development` / `superpowers:test-driven-development` before writing production code.
-- `using-git-worktrees` / `superpowers:using-git-worktrees` when the checkout is dirty, the work should be isolated, or the branch must be PR-ready.
-- `executing-plans` / `superpowers:executing-plans` or `subagent-driven-development` / `superpowers:subagent-driven-development` when executing a written plan, depending on platform support and user authorization.
-- `emil-design-eng` and `ui-ux-pro-max` for UI, UX, visual polish, frontend interaction, responsive behavior, animation, or design-system work.
-- `doc-it` when docs need to be created or updated from code.
-- `pr-title-and-description` before creating the PR.
+After the first repository pass, load only skills that will materially affect the task.
 
-If a relevant skill is unavailable, say so briefly and continue with the best local equivalent.
+Common routing:
 
-### 2. Ground in Repo Reality
+- `brainstorming` / `superpowers:brainstorming`: ambiguous or substantial product, UX, or architecture decisions.
+- `writing-plans` / `superpowers:writing-plans`: medium or complex implementation plans.
+- `test-driven-development` / `superpowers:test-driven-development`: production behavior changes.
+- `using-git-worktrees` / `superpowers:using-git-worktrees`: isolation is requested, the checkout is dirty, or the work is PR-bound.
+- `emil-design-eng` and `ui-ux-pro-max`: meaningful UI, responsive, accessibility, animation, or interaction work.
+- `playwright-interactive` or `playwright`: browser verification.
+- `doc-it`: required near publication when the finished behavior,
+  architecture, configuration, or operations need durable documentation.
+- `pr-title-and-description`: PR publication.
 
-Inspect before asking broad questions.
+Do not load a skill merely because it is adjacent. Do not make every subagent reload planning or design skills it does not need.
 
-- Read repo instructions (`AGENTS.md`, `CLAUDE.md`, `README.md`, package manifests, test commands).
-- Inspect the exact surfaces named by the user before adjacent files.
-- Run `git status --short --branch`; protect unrelated edits.
-- Search for existing patterns, tests, routes, schemas, and components before proposing new abstractions.
+Use `subagent-driven-development` only when the user chooses subagents and the approved plan is complex enough to contain genuinely independent implementation tasks. Directly coordinate ordinary subagents for smaller scopes.
 
-### 3. Brainstorm and Ask Questions
+## 2. Ground in Repo Reality
 
-Do not jump from repo inspection straight into the implementation plan. First run an intent checkpoint and a real brainstorming pass.
+Before broad questions or edits:
 
-After the first repo-context pass, summarize briefly:
-- What the feature or fix appears to be.
-- Which surfaces or subsystems look affected.
-- What decisions are already locked by the prompt or repo.
-- What assumptions would be risky to make.
+- Read repository instructions and package/test commands.
+- Inspect the exact files, routes, components, services, or PR named by the user.
+- Run `git status --short --branch` and protect unrelated changes.
+- Search for existing patterns, tests, permissions, contracts, and runtime behavior.
+- Summarize the intended change, affected surfaces, locked decisions, and risky assumptions.
 
-For non-trivial work, ask at least one meaningful question round unless all of these are true:
-- The user gave a specific target surface and desired behavior.
-- Success criteria and non-goals are clear.
-- Repo inspection found one obvious implementation path.
-- No meaningful product, UX, data contract, permissions, rollout, testing, or PR-handling choice remains.
+## 3. Execution Strategy Checkpoint
 
-If no questions are needed, explicitly say `No blocking questions` and list the assumptions being locked before planning.
+Classify the task after repository inspection:
 
-Question rules:
-- Ask after inspecting discoverable repo facts, not before.
-- Ask only questions that materially change scope, success criteria, UX, data contracts, rollout, testing, or PR handling.
-- Prefer one question at a time for broad/creative work.
-- For compact implementation tasks, ask a short batch of up to 5 high-impact questions.
-- Prefer concrete options with a recommended default when possible.
-- Cover success criteria, out-of-scope behavior, affected users/roles, edge cases, data/API contracts, UI states, browser-test expectations, rollout, and PR expectations when relevant.
-- If a high-impact ambiguity remains, stop and wait for the answer before writing the implementation plan.
-- If only non-blocking preferences remain, state the default assumption and continue.
+| Tier | Typical shape |
+| --- | --- |
+| Small | One surface or package, clear behavior, low-risk and localized changes |
+| Medium | Several related files or states, meaningful UI/API behavior, moderate regression risk |
+| Complex | Multiple packages or independent workstreams, high-risk permissions, payments, security, migrations, infrastructure, or rollout |
 
-For substantial feature shaping or UI/product work, use `brainstorming` / `superpowers:brainstorming` when available. If unavailable, perform the same behavior: explore context, ask questions, present 2-3 approaches with tradeoffs, recommend one, and get approval before writing the spec.
+Then recommend a mode with one sentence of reasoning and ask once:
 
-### 4. Write and Approve the Spec
+> This task looks small/medium/complex. I recommend inline/subagents because ___. Do you want inline or subagents?
 
-Do not create the implementation plan until an approved spec exists.
-The spec approval gate is required before implementation planning.
+Do not ask again if the user already selected a mode. Do not reopen the choice unless scope changes materially.
 
-In normal execution mode:
-- Write a Superpowers-style spec to `docs/superpowers/specs/YYYY-MM-DD-<feature>-design.md`.
-- Include the relevant skills that shaped the spec and any design decisions taken from them.
-- Include goal, success criteria, non-goals, users/roles, affected surfaces, data/API contracts, UI states, edge cases, failure modes, rollout notes, and verification expectations.
-- Include a dedicated testing section with unit/integration scenarios and browser scenarios to cover.
-- Self-review the spec for placeholders, contradictions, missing edge cases, and ambiguous requirements.
-- Stop and ask the user to review/approve the spec before writing the implementation plan.
+### Inline
 
-In Codex Plan Mode:
-- Do not write files.
-- Produce the spec as the approved chat plan first.
-- Persist the spec file only after execution mode resumes.
+Recommend inline for small, tightly coupled, or sequential work where delegation would add coordination cost.
 
-### 5. Plan the Feature From the Approved Spec
+### Subagents
 
-Use `writing-plans` / `superpowers:writing-plans` only after the spec is approved.
+Use between 1 and 4 subagents according to real need and platform capacity:
 
-The plan must lock:
-- Goal, success criteria, and explicit non-goals.
-- Chosen skills and why they apply.
-- Files or subsystems to touch.
-- Public interfaces, schemas, routes, commands, UI states, or data flow that will change.
-- Unit/integration test cases, browser test scenarios, responsive UI/UX review viewports, screenshots/artifacts to capture, docs updates, and PR steps.
-- Edge cases, failure modes, migrations, compatibility, and rollout constraints when relevant.
+- 1: bounded research, QA, implementation, or review.
+- 2: two independent surfaces or workstreams.
+- 3-4: multi-package or genuinely parallel complex work.
 
-Browser testing must be planned before implementation, not decided only at the end. For user-facing UI, forms, auth, routing, async behavior, admin surfaces, responsive behavior, or visually risky changes, the plan must name the browser scenarios to test, the responsive UI/UX review viewports, and the screenshots/videos/logs to save.
-Treat test scenario planning as part of the implementation plan, not as a final verification afterthought.
+Subagent rules:
 
-If the user asks for planning only, stop after the plan. If the user asks to implement end to end, continue after high-impact ambiguities are resolved.
+- Give each agent one concrete deliverable and clear boundaries.
+- Never duplicate the same implementation or create reviewers for every small adjustment.
+- Respect the platform's concurrency limit; the root agent may consume one slot.
+- Require a progress update within 2 minutes. If an agent is silent for 2 minutes, interrupt it and continue inline or reassign the bounded task.
+- A known long-running command may continue only when the agent reports what is running before the deadline.
 
-### 6. Implement with TDD
+## 4. Scale the Spec and Plan
 
-Use `test-driven-development` / `superpowers:test-driven-development` for behavior changes.
+### Small
 
-- Write a failing test first, run it, and confirm the failure is for the expected reason.
-- Implement the smallest production change that makes the test pass.
-- Refactor only after green.
-- Repeat for edge cases and regressions.
-- If the repo has no realistic automated test seam, document why, add the closest practical regression coverage, and use manual verification as a supplement, not a replacement.
+Use a short implementation brief in chat covering goal, non-goals, affected
+files, tests, and browser smoke when relevant. Do not create repository
+spec/plan files unless the user or repository explicitly requires them.
 
-For UI work, apply `emil-design-eng` and `ui-ux-pro-max` during implementation, not only at review time.
+### Medium
 
-### 7. Verify Beyond the Obvious
+Write a compact temporary spec, normally no more than about 150 lines, and a
+5-12 step implementation plan. Get approval for the spec. Execute the plan
+without a second approval unless it introduces a new product or risk decision.
 
-Run the planned narrow tests first, then broaden based on risk.
+### Complex
 
-- Unit or integration tests for changed logic.
-- Typecheck, lint, or build when the repo uses them and the touched area warrants it.
-- Browser verification for the planned scenarios covering user-facing UI, routing, forms, auth flows, complex async behavior, or anything visually risky.
-- Live or deployed checks only when the task is explicitly production/admin/deploy oriented or local verification cannot prove the contract.
-- Save browser screenshots, videos, traces, or logs as artifacts/output files whenever browser testing runs.
+Use full brainstorming, a temporary spec, a separate implementation plan, and
+explicit approval gates. Cover architecture, contracts, permissions, failure
+modes, rollout, tests, browser scenarios, docs, and PR handling.
 
-When tests fail, fix valid failures in scope. Do not hide unrelated baseline failures; report them with evidence.
+For medium and complex work, store workflow artifacts under the repository's
+ignored working-artifact location, defaulting to
+`output/workflow/<feature-or-run-id>/`. Verify the location is ignored before
+writing. These files are execution aids: never stage or commit them, and remove
+them when the run is complete.
 
-### 8. Responsive UI/UX Browser Review
+This location and lifecycle explicitly override defaults in `brainstorming` and
+`writing-plans` that would otherwise save or commit files under
+`docs/superpowers/`.
 
-For meaningful UI, UX, responsive, visual, animation, or interaction changes, run a separate browser review after functional verification.
+User instructions override the tier. If the user explicitly asks for a full spec, planning only, or no documentation, honor that request.
 
-Use `emil-design-eng` and `ui-ux-pro-max` for this review. Check at least three viewport sizes unless the surface cannot reasonably render at one of them:
-- Small mobile, for example 375x667.
-- Tablet, for example 768x1024.
-- Desktop, for example 1440x900.
+## 5. Implement With Focused TDD
 
-For each viewport:
-- Exercise the main user path and at least one relevant edge, loading, empty, error, or overflow state when available.
-- Check layout fit, information hierarchy, readable type, touch/click target size, spacing rhythm, focus states, disabled/loading states, contrast, and lack of horizontal scroll or content overlap.
-- Check interaction polish using `emil-design-eng`: purposeful motion, responsive press feedback, no sluggish animation, no `transition: all`, correct transform origins for anchored UI, and reduced-motion behavior when motion is meaningful.
-- Check UX quality using `ui-ux-pro-max`: accessibility basics, touch and interaction clarity, responsive layout, typography, color contrast, navigation/back behavior, and form feedback when relevant.
-- Save a screenshot, video, trace, or log artifact for each viewport tested.
+Use TDD for behavior changes:
 
-If this review is skipped, state why the change has no meaningful UI/UX surface or why the environment blocked browser review.
+1. Write the narrow failing test and confirm the expected RED.
+2. Make the smallest production change for GREEN.
+3. Refactor while staying green.
+4. Repeat only for additional behavior or regressions.
 
-### 9. Document and Write the Final Report
+During implementation, run narrow RED/GREEN tests. Do not repeatedly run the full package suite after every edit.
 
-Update project docs when behavior, setup, public APIs, admin workflows, commands, or operational procedures changed.
+For documentation, configuration, or skill changes, use the closest deterministic RED/GREEN validation available. If no realistic test seam exists, document the exception and use the strongest practical validation.
 
-The final report must include:
-- Executive summary of what changed and why.
-- Files changed, grouped by behavior or subsystem.
-- Important implementation decisions and alternatives considered.
-- Tests run, including commands and results.
-- Browser scenarios covered, with screenshots/videos/logs linked as artifacts/output files.
-- Responsive UI/UX browser review results across at least three viewport sizes, with artifact links and any fixes made from that review.
-- A browser artifact report with links to saved screenshots, videos, traces, or logs when browser testing ran.
-- Skipped checks with reasons and any unrelated baseline failures.
-- Spec and implementation-plan links.
-- Docs updated or intentionally not needed.
-- Draft PR URL and draft/merge status when GitHub work ran.
+## 6. Verification Ledger
 
-### 10. Create Draft PR by Default
+Keep a compact ledger in the working plan or commentary:
 
-After implementation, verification, and docs, prepare a draft PR unless the user explicitly opts out.
+| Check | Scope | Commit/HEAD | Result | Invalidated by |
+| --- | --- | --- | --- | --- |
+| Focused tests | Changed behavior | SHA | pass/fail | Behavior or test changes |
+| Typecheck/lint | Affected package/files | SHA | pass/fail | Source or config changes |
+| Browser smoke | User-facing final diff | SHA | pass/fail | UI, route, or styling changes |
 
-Before committing or pushing:
-- Re-check `git status --short --branch`.
-- Stage only intended paths with explicit `git add <path>...`.
-- Use a conventional commit message.
-- Generate PR title and body with `pr-title-and-description` from the diff vs base.
+Rules:
 
-GitHub identity:
-- Detect the intended account from repo instructions, user request, and local context.
-- Always run `gh auth status` and `gh api user --jq .login` before PR creation.
-- If a required account is clear and the active account differs, run `gh auth switch --hostname github.com --user <account>`, then rerun `gh api user --jq .login`.
-- If the required account is unclear or unavailable, stop before push/PR and ask.
+- Reuse valid evidence. Reviewers should not rerun checks merely to reproduce existing proof.
+- Rerun a check only when relevant later changes, a rebase, stale environment, missing evidence, or a concrete concern can invalidate it.
+- Run one proportional final verification after the final diff is stable.
+- After rebasing, rerun focused tests and the affected package typecheck; broaden only if conflicts or upstream changes touched the same contract.
 
-Create the PR as draft:
+Default final verification:
 
-```bash
-gh pr create --draft --base <base> --head <branch> --title "<title>" --body-file <body-file>
+| Tier | Expected checks |
+| --- | --- |
+| Small | Focused tests, affected typecheck, changed-file lint when useful, one final smoke for user-facing UI |
+| Medium | Focused and relevant package tests, typecheck/lint, planned browser session |
+| Complex | Broader package or integration suites, typecheck/lint/build as risk requires, full planned browser or live verification |
+
+Do not hide unrelated baseline failures; report them with evidence.
+
+## 7. Consolidated Review
+
+- Run one consolidated review after implementation and before final verification or publication.
+- Use two reviewers only for high-risk work or when the user explicitly requests them. Examples include security, payments, migrations, permissions, destructive operations, and cross-package public contracts.
+- Reviewers inspect the diff, requirements, and verification ledger first. They run extra commands only for missing, stale, or suspicious evidence.
+- If review finds an issue, the implementer fixes it, runs the affected checks, and the original reviewer rechecks that finding. Do not restart the entire spec-review-quality-review-browser chain.
+- Do not create a separate review round for formatting, copy, tokens, or other minor adjustments.
+
+## 8. One Final Browser Session
+
+Combine functional and visual QA into one browser session after the final UI diff is stable.
+
+- Small localized UI: test the main path at one representative viewport plus any specifically affected breakpoint.
+- Medium or complex responsive UI: normally test small mobile, tablet, and desktop.
+- Cover relevant routing, loading/error/empty states, keyboard/focus, accessibility basics, light/dark mode, motion and reduced motion, console errors, and overflow.
+- Save only useful screenshots, videos, traces, or logs under the repository artifact convention.
+- Do not run a second responsive review that repeats the same scenarios.
+
+If browser QA is skipped, state why the change has no meaningful user-facing surface or why the environment blocked it.
+
+## 9. Documentation and Artifact Lifecycle
+
+Before final review or publication, clean the current run's temporary
+spec/plan files. Do not delete unrelated historical artifacts during an
+ordinary feature run.
+
+The final diff against the intended PR base must contain no added, modified,
+renamed, or copied files under `docs/superpowers/plans/` or
+`docs/superpowers/specs/`. Deletions are allowed only for an explicitly scoped
+cleanup task. Restore a pre-existing artifact to its base version instead of
+deleting it; remove artifacts newly created by the current run.
+
+Check both committed and uncommitted changes; any output blocks publication:
+
+```sh
+BASE_REF=origin/main # replace when the intended PR base differs
+git log --format= --name-only --diff-filter=AMCR "$BASE_REF"..HEAD -- \
+  docs/superpowers/plans docs/superpowers/specs output/workflow
+git diff --name-only --diff-filter=AMCR "$BASE_REF"...HEAD -- \
+  docs/superpowers/plans docs/superpowers/specs
+git diff --name-only --diff-filter=AMCR --cached -- \
+  docs/superpowers/plans docs/superpowers/specs
+git diff --name-only --diff-filter=AMCR -- \
+  docs/superpowers/plans docs/superpowers/specs
+git ls-files --others --exclude-standard -- \
+  docs/superpowers/plans docs/superpowers/specs
+git ls-files -- output/workflow
 ```
 
-If the user explicitly asks to merge, squash merge, or address Gemini/GitHub comments, do that after the draft PR exists and after re-checking live PR state, checks, and review threads.
+Run all commands again after staging and immediately before commit or
+push. Do not use `git add .` or another broad staging command after the gate.
+
+Then make an explicit durable-documentation decision:
+
+- Small: documentation is optional when code, tests, and the PR fully explain
+  the change.
+- Medium: use `doc-it` when behavior, configuration, support, or operations
+  would otherwise be difficult to discover.
+- Complex: use `doc-it` against the final code and tests to create or update
+  concise canonical documentation unless the user explicitly declines or an
+  existing canonical page already covers the change.
+
+Permanent documentation describes the feature as it exists: purpose, current
+behavior, contracts, configuration, operational or rollout requirements,
+troubleshooting, limitations, and verification where relevant. Exclude skill
+lists, approval history, task checklists, TDD transcripts, commit choreography,
+and PR/Gemini instructions.
+
+The final report should lead with the outcome and include only relevant items:
+files/behavior changed, important decisions, final tests, browser artifacts,
+skipped checks or baseline failures, canonical documentation links, and PR
+status. Never link temporary specs or plans.
+
+## 10. Draft PR and External Checks
+
+Create a draft PR by default after the final verification unless the user opts out.
+
+- Re-check status and stage only intended paths.
+- Run the workflow-artifact diff gate from Section 9 before staging and again
+  after staging; remove any current-run spec/plan pollution before commit or
+  push.
+- Use conventional commits and `pr-title-and-description`.
+- Verify `gh auth status` and `gh api user --jq .login` before push/PR actions.
+- Preserve the worktree after creating a PR.
+
+CI, deployment checks, and automated reviewers are asynchronous by default:
+
+- Query current state once after publication.
+- Report queued, pending, unavailable, failed, or complete checks accurately.
+- Do not block the task waiting for external systems unless the user explicitly asks to wait, babysit, merge, or resolve all feedback.
 
 ## Quality Gates
 
-Do not call the workflow complete until:
-- The selected skills were loaded or explicitly unavailable.
-- The brainstorming/question checkpoint happened before the implementation plan.
-- Any skipped-question decision included a `No blocking questions` rationale and explicit assumptions.
-- The spec existed and was approved before the implementation plan.
-- The implementation plan existed before production edits and was derived from the approved spec.
-- New behavior has tests that failed before implementation, unless the user approved an exception.
-- Unit/integration and browser scenarios were planned before implementation.
-- Relevant automated and browser checks were run or explicitly reported as skipped.
-- Meaningful UI/UX changes received a separate responsive browser review with `emil-design-eng` and `ui-ux-pro-max` across at least three viewport sizes.
-- Browser artifacts were saved and linked when browser testing ran.
-- Documentation/reporting is complete.
-- Draft PR creation was attempted or intentionally skipped because the user opted out or GitHub identity/access was blocked.
+All tiers require:
+
+- Repo grounding and protected unrelated changes.
+- An explicit execution-mode choice or an already stated user preference.
+- Scope and acceptance criteria proportional to the tier.
+- Temporary workflow artifacts stayed ignored/untracked and were removed at the
+  end of the run.
+- The final PR diff contains no added, modified, renamed, or copied
+  `docs/superpowers` plan/spec artifacts.
+- No commit in the PR branch history added or modified workflow artifacts, even
+  if a later commit deleted them.
+- Durable documentation was explicitly created, updated, confirmed sufficient,
+  or deemed unnecessary according to Section 9.
+- TDD or a documented approved exception.
+- One consolidated review when review is useful.
+- One final proportional verification after the final diff.
+- Honest reporting and a draft PR attempt unless opted out or blocked.
+
+Medium and complex work additionally require proportional temporary spec/plan
+artifacts during execution, not in the final PR. Meaningful UI work requires
+the proportional final browser session. Pending external checks do not prevent
+workflow completion when reported accurately.
 
 ## Common Failure Modes
 
-| Failure | Required Correction |
+| Failure | Correction |
 | --- | --- |
-| Starting code before repo inspection | Stop, inspect the real surface, then revise the plan. |
-| Skipping questions because the task feels obvious | Run the intent checkpoint; ask high-impact questions or state `No blocking questions` with locked assumptions. |
-| Writing an implementation plan before a spec | Stop, write/review the spec, get approval, then build the plan from it. |
-| Planning tests only after implementation | Add unit/integration and browser scenarios to the implementation plan before coding. |
-| Skipping TDD because the change is small | Write the narrow failing test or get explicit user approval for an exception. |
-| Treating UI work as only CSS | Load UI skills and verify interaction, responsiveness, accessibility, and visual state. |
-| Skipping responsive UI/UX review | Run the separate browser review with at least small mobile, tablet, and desktop viewport artifacts, or report why it is not applicable. |
-| Final report only lists commands and PR | Include decisions, considered cases, browser artifacts, spec/plan links, skipped checks, and PR status. |
-| Creating PR under the wrong account | Check `gh auth status` and `gh api user --jq .login`; switch and re-check before pushing. |
-| Broad staging | Use explicit paths and re-check status before commit. |
-| Reporting success with skipped checks hidden | Report skipped checks and why they were skipped. |
+| Loading every related skill | Load only skills that materially affect the task |
+| Using subagent-driven development for a small task | Coordinate directly or work inline |
+| Requiring full spec/plan for a localized change | Use the small implementation brief |
+| Committing plans/specs because nested skills suggest it | Override their location with ignored `output/workflow/` and remove the files before publication |
+| Committing an artifact and deleting it later | Remove it from branch history; final-tree cleanup alone is insufficient |
+| Deleting every historical artifact during each run | Clean only the current run; use a separately scoped cleanup task for repository history |
+| Replacing a long plan with another long permanent doc | Run targeted `doc-it` and document only current durable behavior and operations |
+| Running full tests after every edit | Use narrow RED/GREEN and the verification ledger |
+| Reviewer repeats all verification | Reuse evidence; run only missing or suspect checks |
+| Reviewing after every adjustment | Run one consolidated review and targeted rechecks |
+| Separate functional and visual browser passes | Use one final combined browser session |
+| Waiting indefinitely for CI or reviewers | Report pending state unless explicitly asked to monitor |
+| Final report becomes a second spec | Lead with outcome and link only canonical documentation |

@@ -1,6 +1,6 @@
 interface:
   display_name: "Charlie's Workflow"
-  short_description: "Plan, build, verify, document, and draft PRs"
-  default_prompt: "Use $charlies-workflow to plan, implement, test, document, and open a draft PR for this feature."
+  short_description: "Adaptive planning, delivery, verification, and draft PRs"
+  default_prompt: "Use $charlies-workflow to inspect the repository, recommend inline or 1-4 subagents based on scope, implement with proportional rigor, verify the final diff once, and open a draft PR."
 policy:
   allow_implicit_invocation: false
