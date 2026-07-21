@@ -111,8 +111,11 @@ Typical expectation:
 5. Implement with focused TDD.
 6. Keep a compact verification ledger and run one proportional final verification.
 7. Combine functional and visual browser QA into one final browser session when UI is in scope.
-8. Remove temporary workflow artifacts before publication.
-9. Report outcomes and prepare a draft PR when GitHub work is in scope.
+8. Run a targeted `doc-it` documentation gate, updating a canonical section or
+   creating a page only when the final behavior needs durable coverage.
+9. Remove temporary workflow artifacts before publication.
+10. Report documentation status and evidence with the other outcomes, then
+    prepare a draft PR when GitHub work is in scope.
 
 Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR.
 
