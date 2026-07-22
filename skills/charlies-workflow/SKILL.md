@@ -99,14 +99,17 @@ spec/plan files unless the user or repository explicitly requires them.
 
 ### Medium
 
-Write a compact temporary spec, normally no more than about 150 lines, and a
-5-12 step implementation plan. Get approval for the spec. Execute the plan
-without a second approval unless it introduces a new product or risk decision.
+Write a compact temporary spec, normally no more than about 150 lines, and get
+explicit approval for it. Only then use `writing-plans` to derive a separate
+5-12 step implementation plan from the approved spec. The plan does not need a
+second approval unless it introduces a new product, architecture, or risk
+decision that the approved spec did not settle.
 
 ### Complex
 
-Use full brainstorming, a temporary spec, a separate implementation plan, and
-explicit approval gates. Cover architecture, contracts, permissions, failure
+Use full brainstorming, a temporary spec, a separate implementation plan
+derived with `writing-plans`, and explicit approval gates. Approve the spec
+before writing the plan. Cover architecture, contracts, permissions, failure
 modes, rollout, tests, browser scenarios, docs, and PR handling.
 
 For medium and complex work, store workflow artifacts under the repository's
@@ -114,6 +117,10 @@ ignored working-artifact location, defaulting to
 `output/workflow/<feature-or-run-id>/`. Verify the location is ignored before
 writing. These files are execution aids: never stage or commit them, and remove
 them when the run is complete.
+
+Do not decide whether a spec deserves permanent retention while drafting it.
+After implementation is stable, use the Section 8 Decision Promotion Gate to
+extract only enduring decisions into canonical documentation.
 
 This location and lifecycle explicitly override defaults in `brainstorming` and
 `writing-plans` that would otherwise save or commit files under
@@ -174,7 +181,7 @@ Combine functional and visual QA into one browser session after the final UI dif
 
 If browser QA is skipped, state why the change has no meaningful user-facing surface or why the environment blocked it.
 
-## 8. Documentation and Artifact Lifecycle
+## 8. Documentation, Promotion, and Artifact Lifecycle
 
 Run the documentation gate after the final behavior and browser evidence are
 stable, but before consolidated review and publication.
@@ -231,11 +238,48 @@ troubleshooting, limitations, and verification where relevant. Exclude skill
 lists, approval history, task checklists, TDD transcripts, commit choreography,
 and PR/Gemini instructions.
 
+### Decision Promotion Gate
+
+Run this gate after the final behavior and durable documentation are stable,
+but before deleting the temporary spec and plan. Record the result in the
+documentation ledger and final report.
+
+1. The implementation plan is always temporary. Delete it at the end of the
+   run; never promote the plan or its task checklist as permanent
+   documentation.
+2. The temporary spec is deleted by default. Inspect it for decisions whose
+   rationale would be difficult to reconstruct from final source, tests, and
+   canonical product or operations documentation.
+3. Promote a decision only when future maintainers need durable context, such
+   as a non-obvious architectural tradeoff, rejected alternative with lasting
+   consequences, cross-system contract, security or compliance rationale,
+   migration or rollback constraint, or a multi-PR/phased design dependency.
+   Ordinary implementation choices, file lists, test cases, execution history,
+   and behavior already obvious from source or canonical docs are not promotion
+   candidates.
+4. When promotion is unnecessary, record `Decision promotion: none` with a
+   concrete reason, then delete the temporary spec.
+5. When promotion is necessary, extract only the enduring decision into the
+   repository's established ADR, architecture, or design-document location.
+   Update an existing canonical page when it already owns the decision. Do not
+   copy or rename the temporary spec wholesale.
+6. A promoted decision must be concise and source-final: include status and
+   implementation state, date, context, decision, important alternatives and
+   tradeoffs, consequences, and links to canonical behavior or operations docs.
+   Exclude task sequencing, approval history, test transcripts, and PR
+   narration. Record `Decision promotion: <path and decision>` in the ledger.
+7. Preserve a fuller design document only when the user or repository requires
+   it, audit/regulatory traceability requires it, or active multi-PR work still
+   depends on it. Place it in a canonical non-workflow documentation location,
+   mark whether it is proposed, implemented, or superseded, link current source
+   and docs, and still delete the temporary artifact. Never use
+   `docs/superpowers/` as the retention destination.
+
 ### Temporary Workflow Artifacts
 
-Before final review or publication, clean the current run's temporary
-spec/plan files. Do not delete unrelated historical artifacts during an
-ordinary feature run.
+After recording the promotion decision and before final review or publication,
+delete the current run's implementation plan and temporary spec. Do not delete
+unrelated historical artifacts during an ordinary feature run.
 
 The final diff against the intended PR base must contain no added, modified,
 renamed, or copied files under `docs/superpowers/plans/` or
@@ -276,9 +320,10 @@ The final report should lead with the outcome and include only relevant items:
 files and behavior changed, important decisions, final tests, browser scenarios
 and artifacts, skipped checks or baseline failures, and PR status. Include a
 `Documentation` block with the publication status, canonical files created or
-updated, what they now cover, documentation validation evidence, and remaining
-gaps. For `current` or `not-needed`, include the inspected canonical paths and
-the rationale. Never link temporary specs or plans.
+updated, the decision-promotion result, what the docs now cover, documentation
+validation evidence, and remaining gaps. For `current` or `not-needed`, include
+the inspected canonical paths and the rationale. Never link temporary specs or
+plans.
 
 Preserve this exact slot in every final report:
 
@@ -286,12 +331,13 @@ Preserve this exact slot in every final report:
 Documentation
 - Status: changed | current | not-needed | declined-with-gap
 - Canonical files: <created, updated, or inspected paths>
+- Decision promotion: none (<reason>) | <canonical path and promoted decision>
 - Coverage: <durable behavior documented or reason no change was needed>
 - Validation: <command or manual source evidence>
 - Remaining gaps: none | <explicit gaps>
 ```
 
-Before sending the final response, verify that all five labels appear. A single
+Before sending the final response, verify that all six labels appear. A single
 documentation link or summary bullet does not satisfy this contract. If any
 label is missing, rewrite the report before sending it.
 
@@ -329,11 +375,13 @@ All tiers require:
 - The Section 8 documentation ledger has one publication status and its
   validation evidence; required `doc-it` work was completed or an explicit
   decline is reported as a gap.
+- The Section 8 promotion gate records either `none` with a reason or the
+  canonical path and decision that were promoted.
 - TDD or a documented approved exception.
 - One consolidated review when review is useful.
 - One final proportional verification after the final diff.
 - Honest reporting and a draft PR attempt unless opted out or blocked.
-- The final chat report contains the complete five-label `Documentation` slot.
+- The final chat report contains the complete six-label `Documentation` slot.
 
 Medium and complex work additionally require proportional temporary spec/plan
 artifacts during execution, not in the final PR. Meaningful UI work requires
@@ -350,11 +398,13 @@ workflow completion when reported accurately.
 | Committing plans/specs because nested skills suggest it | Override their location with ignored `output/workflow/` and remove the files before publication |
 | Committing an artifact and deleting it later | Remove it from branch history; final-tree cleanup alone is insufficient |
 | Deleting every historical artifact during each run | Clean only the current run; use a separately scoped cleanup task for repository history |
+| Deleting a spec without checking for durable decisions | Run the promotion gate and record `none` or the canonical promoted decision |
+| Publishing the full spec as an ADR | Extract only enduring rationale, consequences, and source-final links |
 | Replacing a long plan with another long permanent doc | Run targeted `doc-it` and document only current durable behavior and operations |
 | Mentioning `doc-it` without resolving canonical docs | Inspect affected docs and symlinks, then record the target and action in the documentation delta |
 | Creating a new page by default | Update the canonical section first; create a page only for a distinct audience, owner, or lifecycle |
 | Claiming docs are complete without checking references | Validate links, commands, paths, config identifiers, and examples against final source |
-| Collapsing documentation evidence into one link or bullet | Rewrite the final report with Status, Canonical files, Coverage, Validation, and Remaining gaps |
+| Collapsing documentation evidence into one link or bullet | Rewrite the final report with Status, Canonical files, Decision promotion, Coverage, Validation, and Remaining gaps |
 | Running full tests after every edit | Use narrow RED/GREEN and the verification ledger |
 | Reviewer repeats all verification | Reuse evidence; run only missing or suspect checks |
 | Reviewing after every adjustment | Run one consolidated review and targeted rechecks |
