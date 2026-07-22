@@ -111,10 +111,16 @@ Typical expectation:
 5. Implement with focused TDD.
 6. Keep a compact verification ledger and run one proportional final verification.
 7. Combine functional and visual browser QA into one final browser session when UI is in scope.
-8. Remove temporary workflow artifacts before publication.
-9. Report outcomes and prepare a draft PR when GitHub work is in scope.
+8. Run a targeted `doc-it` documentation gate, updating a canonical section or
+   creating a page only when the final behavior needs durable coverage.
+9. Run a decision-promotion gate: discard ordinary planning detail, but extract
+   non-obvious long-lived decisions into the repository's canonical ADR,
+   architecture, or design documentation.
+10. Remove temporary workflow artifacts before publication.
+11. Report documentation and promotion status with the other outcomes, then
+    prepare a draft PR when GitHub work is in scope.
 
-Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR.
+Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR. Plans are always deleted; specs are deleted by default after any genuinely durable decisions have been extracted into concise canonical documentation.
 
 ## Validate
 
