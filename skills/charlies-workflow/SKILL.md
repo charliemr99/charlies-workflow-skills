@@ -195,7 +195,7 @@ Do not use the temporary spec or implementation plan as the documentation
 source of truth.
 
 1. Inventory the affected canonical documentation and resolve root Markdown
-   symlinks before editing. Inspect the README, contributor or operator guides,
+   symlinks before editing. Inspect the `README`, contributor or operator guides,
    relevant pages under `docs/`, and repository-specific documentation checks.
 2. Build a compact documentation delta in the working ledger:
 
@@ -215,7 +215,7 @@ source of truth.
 4. Prefer the smallest canonical edit: update an existing section first; add a
    section when the content has the same audience and lifecycle; create a new
    page only when no canonical home exists or the content has distinct
-   audience, ownership, or lifecycle. Do not assume both README and `docs/`
+   audience, ownership, or lifecycle. Do not assume both `README` and `docs/`
    need the same material.
 5. Match the repository's voice and structure. Document only source-backed
    fields, commands, environment variables, states, errors, and examples. Flag
