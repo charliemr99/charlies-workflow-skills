@@ -23,7 +23,13 @@ def require_text(path: Path, phrases: list[str]) -> None:
 
 def require_explicit_only(path: Path) -> None:
     document = yaml.safe_load(path.read_text(encoding="utf-8"))
-    if document.get("policy", {}).get("allow_implicit_invocation") is not False:
+    if not isinstance(document, dict):
+        raise AssertionError(f"{path}: invalid or empty YAML structure")
+    policy = document.get("policy")
+    if (
+        not isinstance(policy, dict)
+        or policy.get("allow_implicit_invocation") is not False
+    ):
         raise AssertionError(f"{path}: implicit invocation must remain disabled")
 
 
