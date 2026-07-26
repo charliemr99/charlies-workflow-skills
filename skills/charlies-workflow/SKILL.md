@@ -1,19 +1,24 @@
 ---
 name: charlies-workflow
-description: Use when the user explicitly invokes $charlies-workflow for a non-trivial feature, bug fix, refactor, UI change, or PR-ready implementation workflow
+description: Use when the user explicitly invokes $charlies-workflow for a greenfield project, MVP, feature, bug fix, refactor, UI change, or PR-ready implementation workflow
 ---
 
 # Charlies Workflow
 
 ## Overview
 
-Run Charlie's preferred delivery workflow with rigor proportional to scope and risk. Inspect the real repository, choose an execution mode with the user, implement with TDD, document durable behavior, verify the final diff once, and create a draft PR by default.
+Run Charlie's preferred delivery workflow with rigor proportional to scope and
+risk. Select a Feature Track for existing products or a Project Track for a new
+product or MVP, inspect the real environment, choose an execution mode with the
+user, implement with TDD, document durable behavior, verify the final diff once,
+and create a draft PR by default.
 
 This skill is opt-in only. Use it only when the user explicitly invokes `$charlies-workflow`.
 
 ## Core Principles
 
 - Scale ceremony, documentation, tests, review, and browser coverage to risk.
+- Treat delivery track and complexity tier as separate decisions.
 - Load the minimum useful skills; never load every possible skill just in case.
 - Ask once whether to execute inline or with subagents, unless the user already chose.
 - Use subagents for bounded independent work, not as approval ceremonies.
@@ -31,6 +36,10 @@ Common routing:
 - `test-driven-development` / `superpowers:test-driven-development`: production behavior changes.
 - `using-git-worktrees` / `superpowers:using-git-worktrees`: isolation is requested, the checkout is dirty, or the work is PR-bound.
 - `emil-design-eng` and `ui-ux-pro-max`: meaningful UI, responsive, accessibility, animation, or interaction work.
+- `hallmark`: optional visual-direction support for customer-facing greenfield
+  pages, brand/marketing/editorial surfaces, explicit high-expression redesigns,
+  or design-reference study. Read `references/hallmark-routing.md` before
+  selecting it.
 - `playwright-interactive` or `playwright`: browser verification.
 - `doc-it`: required for the Section 8 documentation gate on medium and complex
   work, and on any tier when the final diff changes public behavior,
@@ -51,9 +60,65 @@ Before broad questions or edits:
 - Inspect the exact files, routes, components, services, or PR named by the user.
 - Run `git status --short --branch` and protect unrelated changes.
 - Search for existing patterns, tests, permissions, contracts, and runtime behavior.
-- Summarize the intended change, affected surfaces, locked decisions, and risky assumptions.
+- Summarize the intended change, affected surfaces, locked decisions, risky
+  assumptions, and unresolved questions.
 
-## 3. Execution Strategy Checkpoint
+### Discovery Coverage Gate
+
+Before selecting an implementation approach, cover:
+
+- Goal, audience, user outcome, and measurable success.
+- Scope, non-goals, affected surfaces, and compatibility constraints.
+- Locked facts, product or technical preferences, and repository conventions.
+- Risky assumptions, unknowns, failure modes, and verification expectations.
+
+For non-trivial work, require at least one meaningful question round after repo
+grounding. A question round may be skipped only when all material decisions and
+acceptance criteria are already explicit. In that case, state
+`No blocking questions` and explain why further questions would not change the
+spec or plan.
+
+Project Track has a broader mandatory discovery matrix in
+`references/project-track.md`; it may not use `No blocking questions` until
+every matrix category is resolved or recorded as an approved assumption.
+
+## 3. Delivery Track and Execution Strategy
+
+### Select the Delivery Track
+
+Choose the track before classifying implementation complexity:
+
+| Track | Use when |
+| --- | --- |
+| Feature Track | Changing, fixing, extending, or refactoring an existing product or repository |
+| Project Track | Creating a new product, greenfield application, or MVP from discovery through an agreed completion state |
+
+- Honor an explicitly selected track.
+- Default to Feature Track for scoped work in an established repository.
+- Default to Project Track for a new product or empty/starter repository.
+- If both remain plausible after grounding, ask the user to choose before
+  writing a spec.
+- A project-specific child workflow may explicitly restrict itself to Feature
+  Track.
+
+For Project Track, read `references/project-track.md` and follow its project
+contract, architecture/roadmap approvals, milestone loop, and release gate.
+Do not classify an entire MVP as one Complex feature or create one giant
+implementation plan. Apply Small/Medium/Complex to each milestone.
+
+Before any production edit, report this state:
+
+```text
+Track: feature | project
+Discovery: complete
+Approved spec: yes | not-required
+Implementation plan: ready | not-required
+Current milestone: <name> | not-applicable
+```
+
+Production edits are blocked when a required field is incomplete.
+
+### Select the Execution Strategy
 
 Classify the task after repository inspection:
 
@@ -90,6 +155,10 @@ Subagent rules:
 - A known long-running command may continue only when the agent reports what is running before the deadline.
 
 ## 4. Scale the Spec and Plan
+
+These tier rules apply to Feature Track and to each Project Track milestone.
+Project-wide discovery, approvals, canonical baseline, and release readiness
+come from `references/project-track.md`.
 
 ### Small
 
@@ -178,6 +247,11 @@ Combine functional and visual QA into one browser session after the final UI dif
 - Cover relevant routing, loading/error/empty states, keyboard/focus, accessibility basics, light/dark mode, motion and reduced motion, console errors, and overflow.
 - Save only useful screenshots, videos, traces, or logs under the repository artifact convention.
 - Do not run a second responsive review that repeats the same scenarios.
+
+When Hallmark was selected during discovery:
+
+- Follow `references/hallmark-routing.md` for mode selection, precedence,
+  artifact cleanup, and the required browser-verification handoff.
 
 If browser QA is skipped, state why the change has no meaningful user-facing surface or why the environment blocked it.
 
@@ -364,6 +438,9 @@ CI, deployment checks, and automated reviewers are asynchronous by default:
 All tiers require:
 
 - Repo grounding and protected unrelated changes.
+- An explicit Feature/Project Track selection.
+- Completed discovery coverage, including a justified `No blocking questions`
+  exception when no question round was necessary.
 - An explicit execution-mode choice or an already stated user preference.
 - Scope and acceptance criteria proportional to the tier.
 - Temporary workflow artifacts stayed ignored/untracked and were removed at the
@@ -388,10 +465,17 @@ artifacts during execution, not in the final PR. Meaningful UI work requires
 the proportional final browser session. Pending external checks do not prevent
 workflow completion when reported accurately.
 
+Project Track additionally requires an approved MVP Contract, an approved
+Architecture and Delivery Roadmap, an approved spec and separate plan for the
+current milestone, and the project release gate appropriate to the agreed
+completion state.
+
 ## Common Failure Modes
 
 | Failure | Correction |
 | --- | --- |
+| Treating a whole MVP as one Complex feature | Use Project Track, approve the project contract and roadmap, then deliver vertical milestones through Feature Track |
+| Skipping discovery because the prompt sounds detailed | Complete the coverage matrix or state `No blocking questions` with a concrete rationale |
 | Loading every related skill | Load only skills that materially affect the task |
 | Using subagent-driven development for a small task | Coordinate directly or work inline |
 | Requiring full spec/plan for a localized change | Use the small implementation brief |
@@ -409,5 +493,7 @@ workflow completion when reported accurately.
 | Reviewer repeats all verification | Reuse evidence; run only missing or suspect checks |
 | Reviewing after every adjustment | Run one consolidated review and targeted rechecks |
 | Separate functional and visual browser passes | Use one final combined browser session |
+| Applying Hallmark to every UI task | Route it only for approved high-expression, brand, marketing, greenfield, redesign, or study work |
+| Treating a Hallmark audit as browser proof | Use it as advisory input, then verify the real UI with the normal browser and responsive gates |
 | Waiting indefinitely for CI or reviewers | Report pending state unless explicitly asked to monitor |
 | Final report becomes a second spec | Lead with outcome and link only canonical documentation |

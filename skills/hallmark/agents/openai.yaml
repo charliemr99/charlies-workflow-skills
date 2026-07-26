@@ -1,0 +1,6 @@
+interface:
+  display_name: "Hallmark"
+  short_description: "Optional anti-slop visual design and audit guidance"
+  default_prompt: "Use $hallmark only for an explicit build, study, redesign, or audit request, while preserving repository constraints, accessibility, and established design systems."
+policy:
+  allow_implicit_invocation: false

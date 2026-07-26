@@ -59,6 +59,10 @@ if [[ ! -d "$SKILLS_DIR" ]]; then
   exit 1
 fi
 
+if [[ "$SKILLS_DIR" == "$ROOT_DIR/skills" ]]; then
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/check-workflow-contract.py"
+fi
+
 for skill_dir in "$SKILLS_DIR"/*; do
   [[ -d "$skill_dir" ]] || continue
   if [[ ! -f "$skill_dir/SKILL.md" ]]; then

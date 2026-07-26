@@ -8,17 +8,25 @@ Reusable Agent Skills for Charlie's end-to-end development workflow.
 
 Created by GreenByte Studios.
 
-This repository vendors the Agent Skills used by GreenByte Studios for Charlie's development workflow. The bundle centers on `charlies-workflow`, plus the companion skills it expects so an AI coding agent can inspect the real repo, scale planning rigor to task risk, use TDD, verify in browser when relevant, document durable behavior, and prepare draft PRs without relying on Charlie's local skill folders.
+This repository vendors the Agent Skills used by GreenByte Studios for
+Charlie's development workflow. The bundle centers on `charlies-workflow`,
+which supports scoped work in existing products and greenfield MVP delivery,
+plus the companion skills it expects so an AI coding agent can plan, implement,
+verify, document, and prepare draft PRs without relying on Charlie's local
+skill folders.
 
 ## What These Skills Are
 
 Agent Skills are folders with a `SKILL.md` file and optional scripts, references, assets, and harness metadata. AI coding agents load them on demand to follow a repeatable workflow instead of making every process decision from scratch.
 
-This package is the workflow skill set GreenByte Studios uses for feature work:
+This package is the workflow skill set GreenByte Studios uses for feature and
+new-project delivery:
 
-- `charlies-workflow` is the main orchestrator.
+- `charlies-workflow` is the main orchestrator, with Feature and Project Tracks.
 - Superpowers-derived skills handle brainstorming, specs, implementation plans, TDD, worktrees, and execution when the task calls for them.
 - UI/UX skills support design quality, responsive review, and browser verification.
+- Hallmark provides optional visual-direction study, redesign, and anti-slop
+  auditing for approved high-expression surfaces.
 - Documentation and PR skills help produce final reports and draft PR metadata.
 
 The result is a portable skills bundle you can install into your preferred AI agent harness.
@@ -26,7 +34,7 @@ The result is a portable skills bundle you can install into your preferred AI ag
 ## Included Skills
 
 - `charlies-workflow`
-- Companion skills: `emil-design-eng`, `ui-ux-pro-max`, `doc-it`, `pr-title-and-description`
+- Companion skills: `emil-design-eng`, `ui-ux-pro-max`, `hallmark`, `doc-it`, `pr-title-and-description`
 - Browser skills: `playwright`, `playwright-interactive`
 - Vendored Superpowers skills: `brainstorming`, `writing-plans`, `test-driven-development`, `using-git-worktrees`, `executing-plans`, `subagent-driven-development`
 
@@ -102,25 +110,66 @@ Invoke explicitly:
 $charlies-workflow Please plan and implement this feature end to end.
 ```
 
+Feature Track example:
+
+```text
+$charlies-workflow
+Track: feature
+
+Add team invitations to this existing application.
+```
+
+Project Track example:
+
+```text
+$charlies-workflow
+Track: project
+
+Create an MVP for independent consultants to collect client approvals.
+```
+
+If the track is omitted, the workflow selects Feature Track for scoped changes
+in established repositories and Project Track for a new product or greenfield
+MVP. It asks when both remain plausible after inspecting the environment.
+
 Typical expectation:
 
 1. Inspect repo context.
-2. Classify the task as small, medium, or complex.
-3. Ask once whether to execute inline or with subagents when the user has not already chosen.
-4. Scale planning rigor: small tasks use a short implementation brief; medium and complex tasks use a temporary spec and implementation plan with approval gates.
-5. Implement with focused TDD.
-6. Keep a compact verification ledger and run one proportional final verification.
-7. Combine functional and visual browser QA into one final browser session when UI is in scope.
-8. Run a targeted `doc-it` documentation gate, updating a canonical section or
+2. Complete discovery and select Feature or Project Track.
+3. Classify the current feature or project milestone as small, medium, or complex.
+4. Ask once whether to execute inline or with subagents when the user has not already chosen.
+5. Create and approve the proportional spec before deriving an implementation plan.
+6. Implement with focused TDD.
+7. Keep a compact verification ledger and run one proportional final verification.
+8. Combine functional and visual browser QA into one final browser session when UI is in scope.
+9. Run a targeted `doc-it` documentation gate, updating a canonical section or
    creating a page only when the final behavior needs durable coverage.
-9. Run a decision-promotion gate: discard ordinary planning detail, but extract
+10. Run a decision-promotion gate: discard ordinary planning detail, but extract
    non-obvious long-lived decisions into the repository's canonical ADR,
    architecture, or design documentation.
-10. Remove temporary workflow artifacts before publication.
-11. Report documentation and promotion status with the other outcomes, then
+11. Remove temporary workflow artifacts before publication.
+12. Report documentation and promotion status with the other outcomes, then
     prepare a draft PR when GitHub work is in scope.
 
+Project Track first approves an MVP Contract and an Architecture and Delivery
+Roadmap. It then delivers vertical milestones through Feature Track instead of
+turning the whole MVP into one giant spec, plan, or PR.
+
 Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR. Plans are always deleted; specs are deleted by default after any genuinely durable decisions have been extracted into concise canonical documentation.
+
+### Optional Hallmark Routing
+
+Hallmark is installed with the bundle but is not a default UI dependency.
+Charlie's Workflow selects it only for customer-facing greenfield pages,
+brand/marketing/editorial work, explicit high-expression redesigns, or
+user-approved design-reference study. Operational dashboards, admin tools,
+tables, forms, and localized UI fixes continue to use the repository design
+system, Emil Design, and UI/UX Pro Max without Hallmark unless the user
+explicitly requests it.
+
+Hallmark audits are advisory. Browser behavior, responsive quality,
+accessibility, and interaction still require the normal Playwright and UI/UX
+verification gates.
 
 ## Validate
 
@@ -152,8 +201,10 @@ CODEX_HOME="$tmp/codex" ./scripts/install.sh --harness codex
 1. Refresh source skills locally.
 2. Copy updated skill folders into `skills/`.
 3. Update `manifest.json` and `THIRD_PARTY_NOTICES.md` when upstream versions, sources, or licenses change.
-4. Run `./scripts/validate.sh`.
-5. Run `./scripts/install.sh --dry-run` and a temporary install smoke test.
+4. For Hallmark, review upstream changes and update the pinned commit before
+   replacing the vendored folder.
+5. Run `./scripts/validate.sh`.
+6. Run `./scripts/install.sh --dry-run` and a temporary install smoke test.
 
 ## License
 
