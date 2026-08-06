@@ -1,413 +1,180 @@
 ---
 name: charlies-workflow
-description: Use when the user explicitly invokes $charlies-workflow for a non-trivial feature, bug fix, refactor, UI change, or PR-ready implementation workflow
+description: Use when the user explicitly invokes $charlies-workflow for a greenfield project, MVP, feature, bug fix, refactor, UI change, or PR-ready implementation workflow
 ---
 
 # Charlies Workflow
 
 ## Overview
 
-Run Charlie's preferred delivery workflow with rigor proportional to scope and risk. Inspect the real repository, choose an execution mode with the user, implement with TDD, document durable behavior, verify the final diff once, and create a draft PR by default.
+Run Charlie's explicit end-to-end delivery workflow with rigor proportional to
+scope and risk. Feature Track changes an established product. Project Track
+takes a greenfield product or MVP through discovery and vertical milestones.
 
-This skill is opt-in only. Use it only when the user explicitly invokes `$charlies-workflow`.
+This skill is opt-in only. Use it only when the user explicitly invokes
+`$charlies-workflow`.
 
-## Core Principles
+## Operating Contract
 
-- Scale ceremony, documentation, tests, review, and browser coverage to risk.
-- Load the minimum useful skills; never load every possible skill just in case.
-- Ask once whether to execute inline or with subagents, unless the user already chose.
-- Use subagents for bounded independent work, not as approval ceremonies.
-- Maintain one verification ledger and one consolidated final review.
-- Treat CI and other external reviewers as asynchronous unless the user asks to wait.
+- Keep discovery, spec, plan, implementation, verification, documentation,
+  review, and publication as distinct phases.
+- Read only the current action before running it. Do not preload every action
+  or helper skill.
+- A later phase may start only after the current action's Exit Test passes.
+- Interactive approval is the default. An explicit `auto`, `autonomous`, or
+  `no questions` request selects autonomous approval without removing any spec,
+  plan, TDD, verification, documentation, or review gate.
+- All planning happens in the current conversation. Never move the workflow to
+  a separate planning experience or treat planning as an implementation step.
+- Use inline execution by default for tightly coupled work. Ask once about
+  inline versus subagents only when either is genuinely viable and the user has
+  not already chosen.
+- Keep current-run workflow artifacts ignored and temporary. Preserve only
+  source-final behavior and durable decisions in canonical documentation.
+- Create a draft PR by default. Never merge, deploy, or perform another
+  irreversible external action without explicit authorization.
 
-## 1. Select Minimal Skills
+## Precedence and Ownership
 
-After the first repository pass, load only skills that will materially affect the task.
+Apply rules in this order:
 
-Common routing:
+1. Explicit user requirements and repository safety instructions.
+2. A project-specific child workflow such as `em-workflow`.
+3. This workflow's phase, approval, artifact, and publication gates.
+4. Selected helper skills within the phase they own.
 
-- `brainstorming` / `superpowers:brainstorming`: ambiguous or substantial product, UX, or architecture decisions.
-- `writing-plans` / `superpowers:writing-plans`: medium or complex implementation plans.
-- `test-driven-development` / `superpowers:test-driven-development`: production behavior changes.
-- `using-git-worktrees` / `superpowers:using-git-worktrees`: isolation is requested, the checkout is dirty, or the work is PR-bound.
-- `emil-design-eng` and `ui-ux-pro-max`: meaningful UI, responsive, accessibility, animation, or interaction work.
-- `playwright-interactive` or `playwright`: browser verification.
-- `doc-it`: required for the Section 8 documentation gate on medium and complex
-  work, and on any tier when the final diff changes public behavior,
-  interfaces, configuration, migrations, rollout, support, or operations.
-  Target the affected area; use a full-repository audit only when explicitly
-  requested or when the documentation architecture itself changed.
-- `pr-title-and-description`: PR publication.
+Charlie owns sequencing and gates. `brainstorming` owns discovery technique,
+`writing-plans` owns plan quality, TDD owns the RED/GREEN loop, UI skills own
+design critique, `doc-it` owns documentation quality, and PR skills own PR text.
+A helper may not change the selected track, skip a gate, commit temporary
+artifacts, or broaden its phase.
 
-Do not load a skill merely because it is adjacent. Do not make every subagent reload planning or design skills it does not need.
+`No blocking questions` is a discovery conclusion backed by repository facts
+and explicit assumptions, never a shortcut around the discovery action.
 
-Use `subagent-driven-development` only when the user chooses subagents and the approved plan is complex enough to contain genuinely independent implementation tasks. Directly coordinate ordinary subagents for smaller scopes.
+## Action Router
 
-## 2. Ground in Repo Reality
+Run every action in order. Before each action, read that file and only the
+references it explicitly requires.
 
-Before broad questions or edits:
+| # | Action | Outcome |
+| --- | --- | --- |
+| 1 | [Ground and Route](actions/01-ground-and-route.md) | Repo truth, track, tier, mode, skills, and run state |
+| 2 | [Discover and Spec](actions/02-discover-and-spec.md) | Decision-complete intent and approved proportional spec |
+| 3 | [Plan](actions/03-plan.md) | Separate implementation plan derived from the approved spec |
+| 4 | [Implement](actions/04-implement.md) | Focused TDD implementation without requirement drift |
+| 5 | [Verify and Document](actions/05-verify-and-document.md) | Final checks, browser evidence, durable docs, and review-ready evidence |
+| 6 | [Review and Publish](actions/06-review-and-publish.md) | `ship` verdict, artifact finalization, final report, and draft PR |
 
-- Read repository instructions and package/test commands.
-- Inspect the exact files, routes, components, services, or PR named by the user.
-- Run `git status --short --branch` and protect unrelated changes.
-- Search for existing patterns, tests, permissions, contracts, and runtime behavior.
-- Summarize the intended change, affected surfaces, locked decisions, and risky assumptions.
+The normal state progression is:
 
-## 3. Execution Strategy Checkpoint
+```text
+grounding -> discovery -> awaiting-spec-approval -> planning -> implementing
+-> verifying -> documenting -> reviewing -> publishable -> published
+```
 
-Classify the task after repository inspection:
+On `iterate`, return to implementation, rerun only invalidated checks, and
+review the new candidate HEAD. On a genuine human-only blocker, stop and report
+the exact unmet condition.
+
+## Track and Tier Routing
+
+Choose track before tier:
+
+| Track | Use when |
+| --- | --- |
+| Feature Track | Fixing, extending, or refactoring an existing product or repository |
+| Project Track | Creating a separate greenfield product or MVP through an agreed completion state |
+
+- Honor an explicit track.
+- Default existing repositories to Feature Track and empty/starter products to
+  Project Track. Ask when both remain plausible in interactive mode.
+- For Project Track, read [project-track.md](references/project-track.md).
+- A child workflow may restrict itself to Feature Track.
+
+Then classify the current feature or Project Track milestone:
 
 | Tier | Typical shape |
 | --- | --- |
-| Small | One surface or package, clear behavior, low-risk and localized changes |
-| Medium | Several related files or states, meaningful UI/API behavior, moderate regression risk |
-| Complex | Multiple packages or independent workstreams, high-risk permissions, payments, security, migrations, infrastructure, or rollout |
-
-Then recommend a mode with one sentence of reasoning and ask once:
-
-> This task looks small/medium/complex. I recommend inline/subagents because ___. Do you want inline or subagents?
-
-Do not ask again if the user already selected a mode. Do not reopen the choice unless scope changes materially.
-
-### Inline
-
-Recommend inline for small, tightly coupled, or sequential work where delegation would add coordination cost.
-
-### Subagents
-
-Use between 1 and 4 subagents according to real need and platform capacity:
-
-- 1: bounded research, QA, implementation, or review.
-- 2: two independent surfaces or workstreams.
-- 3-4: multi-package or genuinely parallel complex work.
-
-Subagent rules:
-
-- Give each agent one concrete deliverable and clear boundaries.
-- Never duplicate the same implementation or create reviewers for every small adjustment.
-- Respect the platform's concurrency limit; the root agent may consume one slot.
-- Require a progress update within 2 minutes. If an agent is silent for 2 minutes, interrupt it and continue inline or reassign the bounded task.
-- A known long-running command may continue only when the agent reports what is running before the deadline.
-
-## 4. Scale the Spec and Plan
-
-### Small
-
-Use a short implementation brief in chat covering goal, non-goals, affected
-files, tests, and browser smoke when relevant. Do not create repository
-spec/plan files unless the user or repository explicitly requires them.
-
-### Medium
-
-Write a compact temporary spec, normally no more than about 150 lines, and get
-explicit approval for it. Only then use `writing-plans` to derive a separate
-5-12 step implementation plan from the approved spec. The plan does not need a
-second approval unless it introduces a new product, architecture, or risk
-decision that the approved spec did not settle.
-
-### Complex
-
-Use full brainstorming, a temporary spec, a separate implementation plan
-derived with `writing-plans`, and explicit approval gates. Approve the spec
-before writing the plan. Cover architecture, contracts, permissions, failure
-modes, rollout, tests, browser scenarios, docs, and PR handling.
-
-For medium and complex work, store workflow artifacts under the repository's
-ignored working-artifact location, defaulting to
-`output/workflow/<feature-or-run-id>/`. Verify the location is ignored before
-writing. These files are execution aids: never stage or commit them, and remove
-them when the run is complete.
-
-Do not decide whether a spec deserves permanent retention while drafting it.
-After implementation is stable, use the Section 8 Decision Promotion Gate to
-extract only enduring decisions into canonical documentation.
-
-This location and lifecycle explicitly override defaults in `brainstorming` and
-`writing-plans` that would otherwise save or commit files under
-`docs/superpowers/`.
-
-User instructions override the tier. If the user explicitly asks for a full spec, planning only, or no documentation, honor that request.
-
-## 5. Implement With Focused TDD
-
-Use TDD for behavior changes:
-
-1. Write the narrow failing test and confirm the expected RED.
-2. Make the smallest production change for GREEN.
-3. Refactor while staying green.
-4. Repeat only for additional behavior or regressions.
-
-During implementation, run narrow RED/GREEN tests. Do not repeatedly run the full package suite after every edit.
-
-For documentation, configuration, or skill changes, use the closest deterministic RED/GREEN validation available. If no realistic test seam exists, document the exception and use the strongest practical validation.
-
-## 6. Verification Ledger
-
-Keep a compact ledger in the working plan or commentary:
-
-| Check | Scope | Commit/HEAD | Result | Invalidated by |
-| --- | --- | --- | --- | --- |
-| Focused tests | Changed behavior | SHA | pass/fail | Behavior or test changes |
-| Typecheck/lint | Affected package/files | SHA | pass/fail | Source or config changes |
-| Browser smoke | User-facing final diff | SHA | pass/fail | UI, route, or styling changes |
-| Documentation | Final durable behavior | SHA | changed/current/not-needed/declined-with-gap | Behavior, contracts, config, or operations changes |
-
-Rules:
-
-- Reuse valid evidence. Reviewers should not rerun checks merely to reproduce existing proof.
-- Rerun a check only when relevant later changes, a rebase, stale environment, missing evidence, or a concrete concern can invalidate it.
-- Run one proportional final verification after the final diff is stable.
-- After rebasing, rerun focused tests and the affected package typecheck; broaden only if conflicts or upstream changes touched the same contract.
-
-Default final verification:
-
-| Tier | Expected checks |
-| --- | --- |
-| Small | Focused tests, affected typecheck, changed-file lint when useful, one final smoke for user-facing UI |
-| Medium | Focused and relevant package tests, typecheck/lint, planned browser session |
-| Complex | Broader package or integration suites, typecheck/lint/build as risk requires, full planned browser or live verification |
-
-Do not hide unrelated baseline failures; report them with evidence.
-
-## 7. One Final Browser Session
-
-Combine functional and visual QA into one browser session after the final UI diff is stable.
-
-- Small localized UI: test the main path at one representative viewport plus any specifically affected breakpoint.
-- Medium or complex responsive UI: normally test small mobile, tablet, and desktop.
-- Cover relevant routing, loading/error/empty states, keyboard/focus, accessibility basics, light/dark mode, motion and reduced motion, console errors, and overflow.
-- Save only useful screenshots, videos, traces, or logs under the repository artifact convention.
-- Do not run a second responsive review that repeats the same scenarios.
-
-If browser QA is skipped, state why the change has no meaningful user-facing surface or why the environment blocked it.
-
-## 8. Documentation, Promotion, and Artifact Lifecycle
-
-Run the documentation gate after the final behavior and browser evidence are
-stable, but before consolidated review and publication.
-
-### Durable Documentation Gate
-
-**REQUIRED SUB-SKILL:** Use `doc-it` when the tier rule below requires it.
-
-Use the final diff, source, tests, and verified runtime behavior as evidence.
-Do not use the temporary spec or implementation plan as the documentation
-source of truth.
-
-1. Inventory the affected canonical documentation and resolve root Markdown
-   symlinks before editing. Inspect the `README`, contributor or operator guides,
-   relevant pages under `docs/`, and repository-specific documentation checks.
-2. Build a compact documentation delta in the working ledger:
-
-   | Surface | Final-diff evidence | Canonical target | Action | Verification |
-   | --- | --- | --- | --- | --- |
-   | Behavior/API/config/operations | file, test, or runtime evidence | existing path or missing | update/create/current/not-needed | check or rationale |
-
-3. Apply the tier rule:
-   - Small: record `not-needed` with a concrete reason when there is no durable
-     change. Use targeted `doc-it` when a durable surface changed.
-   - Medium: use targeted `doc-it` to audit the affected canonical docs even
-     when the result is `current`.
-   - Complex: use targeted `doc-it` and ensure canonical docs cover the changed
-     behavior, contracts, configuration, rollout, rollback, support, and
-     troubleshooting that apply. An explicit user decline must be recorded as
-     a gap in the final report.
-4. Prefer the smallest canonical edit: update an existing section first; add a
-   section when the content has the same audience and lifecycle; create a new
-   page only when no canonical home exists or the content has distinct
-   audience, ownership, or lifecycle. Do not assume both `README` and `docs/`
-   need the same material.
-5. Match the repository's voice and structure. Document only source-backed
-   fields, commands, environment variables, states, errors, and examples. Flag
-   unknowns instead of inventing them.
-6. Validate the documentation. Run repository documentation checks when they
-   exist; otherwise inspect changed links, referenced paths, commands, config
-   identifiers, and examples against the final source. Record the command or
-   manual evidence in the verification ledger.
-
-The documentation ledger entry must end in exactly one publication status:
-`changed`, `current`, `not-needed`, or `declined-with-gap`. The delta table
-records whether individual files were updated or created. Missing status,
-stale references, failed documentation checks, or an unresolved gap that
-affects setup, use, support, rollout, or recovery blocks publication unless the
-user explicitly accepts the documented gap.
-
-Permanent documentation describes the feature as it exists: purpose, current
-behavior, contracts, configuration, operational or rollout requirements,
-troubleshooting, limitations, and verification where relevant. Exclude skill
-lists, approval history, task checklists, TDD transcripts, commit choreography,
-and PR/Gemini instructions.
-
-### Decision Promotion Gate
-
-Run this gate after the final behavior and durable documentation are stable,
-but before deleting the temporary spec and plan. Record the result in the
-documentation ledger and final report.
-
-1. The implementation plan is always temporary. Delete it at the end of the
-   run; never promote the plan or its task checklist as permanent
-   documentation.
-2. The temporary spec is deleted by default. Inspect it for decisions whose
-   rationale would be difficult to reconstruct from final source, tests, and
-   canonical product or operations documentation.
-3. Promote a decision only when future maintainers need durable context, such
-   as a non-obvious architectural tradeoff, rejected alternative with lasting
-   consequences, cross-system contract, security or compliance rationale,
-   migration or rollback constraint, or a multi-PR/phased design dependency.
-   Ordinary implementation choices, file lists, test cases, execution history,
-   and behavior already obvious from source or canonical docs are not promotion
-   candidates.
-4. When promotion is unnecessary, record `Decision promotion: none` with a
-   concrete reason, then delete the temporary spec.
-5. When promotion is necessary, extract only the enduring decision into the
-   repository's established ADR, architecture, or design-document location.
-   Update an existing canonical page when it already owns the decision. Do not
-   copy or rename the temporary spec wholesale.
-6. A promoted decision must be concise and source-final: include status and
-   implementation state, date, context, decision, important alternatives and
-   tradeoffs, consequences, and links to canonical behavior or operations docs.
-   Exclude task sequencing, approval history, test transcripts, and PR
-   narration. Record `Decision promotion: <path and decision>` in the ledger.
-7. Preserve a fuller design document only when the user or repository requires
-   it, audit/regulatory traceability requires it, or active multi-PR work still
-   depends on it. Place it in a canonical non-workflow documentation location,
-   mark whether it is proposed, implemented, or superseded, link current source
-   and docs, and still delete the temporary artifact. Never use
-   `docs/superpowers/` as the retention destination.
-
-### Temporary Workflow Artifacts
-
-After recording the promotion decision and before final review or publication,
-delete the current run's implementation plan and temporary spec. Do not delete
-unrelated historical artifacts during an ordinary feature run.
-
-The final diff against the intended PR base must contain no added, modified,
-renamed, or copied files under `docs/superpowers/plans/` or
-`docs/superpowers/specs/`. Deletions are allowed only for an explicitly scoped
-cleanup task. Restore a pre-existing artifact to its base version instead of
-deleting it; remove artifacts newly created by the current run.
-
-Check both committed and uncommitted changes; any output blocks publication:
-
-```sh
-BASE_REF=origin/main # replace when the intended PR base differs
-git log --format= --name-only --diff-filter=AMCR "$BASE_REF"..HEAD -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git diff --name-only --diff-filter=AMCR "$BASE_REF"...HEAD -- \
-  docs/superpowers/plans docs/superpowers/specs
-git diff --name-only --diff-filter=AMCR --cached -- \
-  docs/superpowers/plans docs/superpowers/specs
-git diff --name-only --diff-filter=AMCR -- \
-  docs/superpowers/plans docs/superpowers/specs
-git ls-files --others --exclude-standard -- \
-  docs/superpowers/plans docs/superpowers/specs
-git ls-files -- output/workflow
-```
-
-Run all commands again after staging and immediately before commit or
-push. Do not use `git add .` or another broad staging command after the gate.
-
-## 9. Consolidated Review and Final Report
-
-- Run one consolidated review after implementation and the Section 8 durable
-  documentation gate, before final verification or publication.
-- Use two reviewers only for high-risk work or when the user explicitly requests them. Examples include security, payments, migrations, permissions, destructive operations, and cross-package public contracts.
-- Reviewers inspect the diff, requirements, documentation delta, and verification ledger first. They run extra commands only for missing, stale, or suspicious evidence.
-- If review finds an issue, the implementer fixes it, runs the affected checks, and the original reviewer rechecks that finding. Rerun documentation or browser checks only when the fix invalidates that evidence. Do not restart the entire review chain.
-- Do not create a separate review round for formatting, copy, tokens, or other minor adjustments.
-
-The final report should lead with the outcome and include only relevant items:
-files and behavior changed, important decisions, final tests, browser scenarios
-and artifacts, skipped checks or baseline failures, and PR status. Include a
-`Documentation` block with the publication status, canonical files created or
-updated, the decision-promotion result, what the docs now cover, documentation
-validation evidence, and remaining gaps. For `current` or `not-needed`, include
-the inspected canonical paths and the rationale. Never link temporary specs or
-plans.
-
-Preserve this exact slot in every final report:
-
-```text
-Documentation
-- Status: changed | current | not-needed | declined-with-gap
-- Canonical files: <created, updated, or inspected paths>
-- Decision promotion: none (<reason>) | <canonical path and promoted decision>
-- Coverage: <durable behavior documented or reason no change was needed>
-- Validation: <command or manual source evidence>
-- Remaining gaps: none | <explicit gaps>
-```
-
-Before sending the final response, verify that all six labels appear. A single
-documentation link or summary bullet does not satisfy this contract. If any
-label is missing, rewrite the report before sending it.
-
-## 10. Draft PR and External Checks
-
-Create a draft PR by default after the final verification unless the user opts out.
-
-- Re-check status and stage only intended paths.
-- Run the workflow-artifact diff gate from Section 8 before staging and again
-  after staging; remove any current-run spec/plan pollution before commit or
-  push.
-- Use conventional commits and `pr-title-and-description`.
-- Verify `gh auth status` and `gh api user --jq .login` before push/PR actions.
-- Preserve the worktree after creating a PR.
-
-CI, deployment checks, and automated reviewers are asynchronous by default:
-
-- Query current state once after publication.
-- Report queued, pending, unavailable, failed, or complete checks accurately.
-- Do not block the task waiting for external systems unless the user explicitly asks to wait, babysit, merge, or resolve all feedback.
-
-## Quality Gates
-
-All tiers require:
-
-- Repo grounding and protected unrelated changes.
-- An explicit execution-mode choice or an already stated user preference.
-- Scope and acceptance criteria proportional to the tier.
-- Temporary workflow artifacts stayed ignored/untracked and were removed at the
-  end of the run.
-- The final PR diff contains no added, modified, renamed, or copied
-  `docs/superpowers` plan/spec artifacts.
-- No commit in the PR branch history added or modified workflow artifacts, even
-  if a later commit deleted them.
-- The Section 8 documentation ledger has one publication status and its
-  validation evidence; required `doc-it` work was completed or an explicit
-  decline is reported as a gap.
-- The Section 8 promotion gate records either `none` with a reason or the
-  canonical path and decision that were promoted.
-- TDD or a documented approved exception.
-- One consolidated review when review is useful.
-- One final proportional verification after the final diff.
-- Honest reporting and a draft PR attempt unless opted out or blocked.
-- The final chat report contains the complete six-label `Documentation` slot.
-
-Medium and complex work additionally require proportional temporary spec/plan
-artifacts during execution, not in the final PR. Meaningful UI work requires
-the proportional final browser session. Pending external checks do not prevent
-workflow completion when reported accurately.
+| Small | One clear low-risk surface with localized behavior |
+| Medium | Several related files or states with moderate regression risk |
+| Complex | Cross-package work, independent workstreams, or material security, permissions, payments, migration, infrastructure, or rollout risk |
+
+Small work uses a concise in-conversation brief and plan. Medium and Complex
+work use separate temporary spec and plan files. User instructions may demand
+more rigor, but risk-sensitive work may not be downgraded merely to reduce
+ceremony.
+
+## Minimal Skill Routing
+
+Load a helper only when the current action needs it:
+
+- `brainstorming` / `superpowers:brainstorming`: non-trivial discovery and spec.
+- `writing-plans` / `superpowers:writing-plans`: Medium and Complex plans.
+- `test-driven-development` / `superpowers:test-driven-development`: behavior changes.
+- `using-git-worktrees` / `superpowers:using-git-worktrees`: requested isolation,
+  dirty checkouts, or PR-bound work.
+- `emil-design-eng` and `ui-ux-pro-max`: meaningful UI and the required
+  responsive quality gate.
+- `hallmark`: only under [hallmark-routing.md](references/hallmark-routing.md).
+- `playwright-interactive` or `playwright`: browser verification.
+- `doc-it`: targeted durable documentation review.
+- `pr-title-and-description`: PR publication.
+
+Use `subagent-driven-development` only after the plan is ready and only for
+genuinely independent tasks. A worker receives one bounded deliverable and may
+not edit the spec, acceptance criteria, or plan.
+
+## Temporary State and Artifacts
+
+For Medium and Complex work, copy
+`assets/run-state-template.json` into the current run directory, normally
+`output/workflow/<run-id>/`. Verify that location is ignored before writing. If
+the repository has no ignored workflow location, use an OS temporary directory
+instead of changing `.gitignore` solely for workflow artifacts.
+
+Update state only after the relevant Exit Test passes. The spec, plan, review
+notes, state, and necessary evidence are execution aids. Retain them through
+consolidated review and every `iterate` loop, while keeping them ignored,
+unstaged, and outside branch history. After `ship` for the exact current HEAD,
+apply the decision-promotion and cleanup gates in
+[documentation-and-artifacts.md](references/documentation-and-artifacts.md).
+Never retain temporary files under `docs/superpowers/` unless the user
+explicitly requests a canonical design artifact and the documentation gate
+selects an appropriate permanent home.
+
+## Hard Gates
+
+Production edits are blocked until the selected track and tier are recorded,
+discovery is complete, the proportional spec is approved or explicitly
+`not-required` under the complete Small-request rule, and the separate plan is
+ready or explicitly not-required.
+
+Publication is blocked until:
+
+- TDD or a documented user-approved exception is recorded.
+- Final verification applies to the current candidate HEAD.
+- Meaningful UI passed functional browser QA and Verify Beyond the Obvious.
+- Documentation has one final status: `changed`, `current`, `not-needed`, or
+  `declined-with-gap`.
+- Consolidated review returned `ship` for the exact current `reviewed_head`.
+- Decision promotion is final and temporary artifacts are absent from the
+  working tree, final diff, staged state, and branch history.
+- The worktree contains no unreviewed source changes.
+
+Pending generic CI or external reviewers may be reported after one query unless
+the user or a child workflow requires waiting for a terminal result.
 
 ## Common Failure Modes
 
 | Failure | Correction |
 | --- | --- |
-| Loading every related skill | Load only skills that materially affect the task |
-| Using subagent-driven development for a small task | Coordinate directly or work inline |
-| Requiring full spec/plan for a localized change | Use the small implementation brief |
-| Committing plans/specs because nested skills suggest it | Override their location with ignored `output/workflow/` and remove the files before publication |
-| Committing an artifact and deleting it later | Remove it from branch history; final-tree cleanup alone is insufficient |
-| Deleting every historical artifact during each run | Clean only the current run; use a separately scoped cleanup task for repository history |
-| Deleting a spec without checking for durable decisions | Run the promotion gate and record `none` or the canonical promoted decision |
-| Publishing the full spec as an ADR | Extract only enduring rationale, consequences, and source-final links |
-| Replacing a long plan with another long permanent doc | Run targeted `doc-it` and document only current durable behavior and operations |
-| Mentioning `doc-it` without resolving canonical docs | Inspect affected docs and symlinks, then record the target and action in the documentation delta |
-| Creating a new page by default | Update the canonical section first; create a page only for a distinct audience, owner, or lifecycle |
-| Claiming docs are complete without checking references | Validate links, commands, paths, config identifiers, and examples against final source |
-| Collapsing documentation evidence into one link or bullet | Rewrite the final report with Status, Canonical files, Decision promotion, Coverage, Validation, and Remaining gaps |
-| Running full tests after every edit | Use narrow RED/GREEN and the verification ledger |
-| Reviewer repeats all verification | Reuse evidence; run only missing or suspect checks |
-| Reviewing after every adjustment | Run one consolidated review and targeted rechecks |
-| Separate functional and visual browser passes | Use one final combined browser session |
-| Waiting indefinitely for CI or reviewers | Report pending state unless explicitly asked to monitor |
-| Final report becomes a second spec | Lead with outcome and link only canonical documentation |
+| Counting questions instead of resolving decisions | Continue the discovery readiness loop until no build-changing item remains open |
+| Treating `no questions` as permission to skip planning | Use autonomous approval while preserving every artifact and quality gate |
+| Writing the plan before approval | Return to Discover and Spec; planning consumes an approved spec digest |
+| Quietly changing requirements during implementation | Invalidate the spec approval, revise, and replan |
+| Treating green tests as complete browser proof | Run functional QA and the separate responsive quality gate |
+| Reviewing a stale diff | Review again and replace `reviewed_head` |
+| Deleting the spec, plan, or state before review | Retain ignored artifacts through every `iterate` loop; clean them only after `ship` |
+| Keeping workflow transcripts as permanent docs | Promote only durable source-final behavior or non-obvious decisions |
+| Letting a child workflow duplicate Charlie | Keep the child as a narrow override layer |

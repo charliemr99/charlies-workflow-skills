@@ -1,0 +1,16 @@
+Hallmark skill
+
+Source:
+- Repository: Nutlope/hallmark
+- Path: skills/hallmark
+- Version: 1.1.0
+- Reviewed commit: aeb42fb354ff4efa36ab475773a082315a3af2ce
+
+Copyright (c) 2026 Hallmark contributors.
+Licensed under the MIT License in LICENSE.txt.
+
+Packaging modifications:
+- Moved the upstream top-level version field to metadata.version for
+  compatibility with the official Agent Skills validator.
+- Added agents/openai.yaml to keep implicit invocation disabled in Codex.
+- Removed one trailing blank line so the vendored tree passes git diff --check.

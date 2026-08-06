@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="$ROOT_DIR/skills"
 PYTHON_BIN="${PYTHON:-python3}"
-VALIDATOR="${VALIDATOR:-$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py}"
+VALIDATOR="${VALIDATOR:-$ROOT_DIR/scripts/vendor/openai-skill-creator/quick_validate.py}"
 
 usage() {
   cat <<'USAGE'
@@ -14,7 +14,7 @@ Options:
   --skills-dir PATH
       Directory containing skill folders. Defaults to ./skills.
   --validator PATH
-      Path to Codex quick_validate.py.
+      Path to Codex quick_validate.py. Defaults to the commit-pinned vendored copy.
   --python PATH
       Python executable to run the validator.
   -h, --help
@@ -50,13 +50,19 @@ done
 
 if [[ ! -f "$VALIDATOR" ]]; then
   echo "Validator not found: $VALIDATOR" >&2
-  echo "Set VALIDATOR=/path/to/quick_validate.py or install Codex skill-creator." >&2
+  echo "Set VALIDATOR=/path/to/quick_validate.py or restore the vendored validator." >&2
   exit 1
 fi
 
 if [[ ! -d "$SKILLS_DIR" ]]; then
   echo "Skills directory not found: $SKILLS_DIR" >&2
   exit 1
+fi
+
+if [[ "$SKILLS_DIR" == "$ROOT_DIR/skills" ]]; then
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_check_workflow_contract.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_eval_workflow.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/check-workflow-contract.py"
 fi
 
 for skill_dir in "$SKILLS_DIR"/*; do

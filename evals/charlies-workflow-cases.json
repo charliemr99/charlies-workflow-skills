@@ -1,0 +1,100 @@
+{
+  "schema_version": 2,
+  "description": "Opt-in behavioral smoke checks for Charlie's Workflow phase gates.",
+  "cases": [
+    {
+      "id": "vague-feature-stops-in-discovery",
+      "prompt": "$charlies-workflow\nTrack: feature\nInteractive mode. Add collaboration to this existing application. Inspect the fixture repository, begin the workflow, and stop when the next user decision or approval is required. Do not edit repository source or configuration. End with `Workflow phase: awaiting-discovery-answer`.",
+      "expected_phase": "awaiting-discovery-answer",
+      "required_output": [
+        "(?i)workflow phase:\\s*awaiting-discovery-answer",
+        "(?i)(scope|alcance|actor|journey|flujo)",
+        "(?i)(\\?|question|pregunta|decision|decisi)"
+      ],
+      "forbidden_output": [
+        "(?i)(implementation complete|implemented successfully|draft pr|starting implementation|beginning tdd)"
+      ],
+      "forbid_workspace_changes": true,
+      "required_artifacts": []
+    },
+    {
+      "id": "medium-feature-requires-spec-approval",
+      "prompt": "$charlies-workflow\nTrack: feature\nTier: medium\nInteractive mode. Add CSV export to the fixture application. The export must include the visible rows, preserve their displayed order, and surface an error when generation fails. These are proposed requirements, not an approved spec. Inspect the repository, produce the proportional spec in the ignored workflow directory, and stop at the required approval gate. Do not edit repository source or configuration. End with `Workflow phase: awaiting-spec-approval`.",
+      "expected_phase": "awaiting-spec-approval",
+      "required_output": [
+        "(?i)workflow phase:\\s*awaiting-spec-approval",
+        "(?i)(explicit approval|approve the spec|aprobar el spec|aprobaci.*spec)",
+        "(?i)(acceptance criteria|criterios de aceptaci)"
+      ],
+      "forbidden_output": [
+        "(?i)(implementation complete|implemented successfully|draft pr|starting implementation|beginning tdd)"
+      ],
+      "forbid_workspace_changes": true,
+      "required_artifacts": [
+        {
+          "glob": "output/workflow/**/*.md",
+          "min_matches": 1,
+          "required_content": [
+            "(?i)(acceptance criteria|criterios de aceptaci)",
+            "(?i)(non-goals|fuera de alcance)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "autonomous-medium-still-plans",
+      "prompt": "$charlies-workflow\nTrack: feature\nTier: medium\nAutonomous mode, no questions. Add an audit-log view that lists actor, action, target, and timestamp; supports empty and failed loading states; and is visible only to admins. Make conservative assumptions, complete discovery, the spec, and the separate implementation plan in the ignored workflow directory, then stop before implementation. Do not edit repository source or configuration. End with `Workflow phase: plan-ready`.",
+      "expected_phase": "plan-ready",
+      "required_output": [
+        "(?i)workflow phase:\\s*plan-ready",
+        "(?i)(auto-approved|autonomous approval|aprobaci.*aut)",
+        "(?i)(implementation plan|plan de implementaci)",
+        "(?i)(acceptance|criteri)",
+        "(?i)(test-driven|tdd|red.*green)"
+      ],
+      "forbidden_output": [
+        "(?i)(implementation complete|implemented successfully|draft pr|starting implementation|beginning tdd)"
+      ],
+      "forbid_workspace_changes": true,
+      "required_artifacts": [
+        {
+          "glob": "output/workflow/**/*.md",
+          "min_matches": 2,
+          "required_content": [
+            "(?i)(acceptance criteria|criterios de aceptaci)",
+            "(?i)(implementation plan|plan de implementaci)",
+            "(?i)(red|green|tdd)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ui-plan-covers-browser-and-viewports",
+      "prompt": "$charlies-workflow\nTrack: feature\nTier: medium\nThe following spec is explicitly approved: add a collapsible navigation drawer, preserve keyboard access, show the selected route, and keep desktop navigation unchanged. Persist the approved spec and separate implementation plan in the ignored workflow directory, then stop before implementation. Do not edit repository source or configuration. End with `Workflow phase: plan-ready`.",
+      "expected_phase": "plan-ready",
+      "required_output": [
+        "(?i)workflow phase:\\s*plan-ready",
+        "(?i)(browser scenario|browser test|playwright)",
+        "(?i)(small mobile|390x844)",
+        "(?i)(tablet|768x1024)",
+        "(?i)(desktop|1440x900)"
+      ],
+      "forbidden_output": [
+        "(?i)(implementation complete|implemented successfully|draft pr|starting implementation|beginning tdd)"
+      ],
+      "forbid_workspace_changes": true,
+      "required_artifacts": [
+        {
+          "glob": "output/workflow/**/*.md",
+          "min_matches": 2,
+          "required_content": [
+            "(?i)(browser scenario|browser test|playwright)",
+            "(?i)(390x844|small mobile)",
+            "(?i)(768x1024|tablet)",
+            "(?i)(1440x900|desktop)"
+          ]
+        }
+      ]
+    }
+  ]
+}
