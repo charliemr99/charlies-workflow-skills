@@ -30,14 +30,14 @@ def require_absent(path: Path, phrases: list[str]) -> None:
 
 def require_ordered_text(path: Path, phrases: list[str]) -> None:
     content = path.read_text(encoding="utf-8")
-    cursor = -1
+    cursor = 0
     for phrase in phrases:
-        position = content.find(phrase, cursor + 1)
+        position = content.find(phrase, cursor)
         if position < 0:
             if phrase in content:
                 raise AssertionError(f"{path}: phrase out of order {phrase!r}")
             raise AssertionError(f"{path}: missing ordered phrase {phrase!r}")
-        cursor = position
+        cursor = position + len(phrase)
 
 
 def require_action_contract(path: Path) -> None:

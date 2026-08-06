@@ -76,6 +76,16 @@ class RequireOrderedTextTests(unittest.TestCase):
                     ["review candidate", "ship verdict", "delete artifacts", "publish"],
                 )
 
+    def test_rejects_reusing_an_overlapping_phrase(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "action.md"
+            path.write_text("review candidate\nship verdict\n", encoding="utf-8")
+            with self.assertRaisesRegex(AssertionError, "out of order"):
+                CONTRACT.require_ordered_text(
+                    path,
+                    ["review candidate", "candidate"],
+                )
+
 
 if __name__ == "__main__":
     unittest.main()
