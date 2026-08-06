@@ -324,7 +324,11 @@ def main() -> None:
         CHARLIE / "agents" / "openai.yaml",
         ROOT / "README.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
+        ROOT / "scripts" / "check-workflow-contract.py",
+        ROOT / "scripts" / "test_check_workflow_contract.py",
         ROOT / "scripts" / "eval-workflow.py",
+        ROOT / "scripts" / "test_eval_workflow.py",
+        ROOT / ".github" / "workflows" / "validate.yml",
         ROOT / "manifest.json",
         ROOT / "THIRD_PARTY_NOTICES.md",
     ]

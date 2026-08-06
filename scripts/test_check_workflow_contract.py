@@ -87,5 +87,18 @@ class RequireOrderedTextTests(unittest.TestCase):
                 )
 
 
+class AuthoredFileCoverageTests(unittest.TestCase):
+    def test_contract_scans_repo_owned_validation_files(self) -> None:
+        source = MODULE_PATH.read_text(encoding="utf-8")
+        for path_expression in [
+            'ROOT / "scripts" / "check-workflow-contract.py"',
+            'ROOT / "scripts" / "test_check_workflow_contract.py"',
+            'ROOT / "scripts" / "eval-workflow.py"',
+            'ROOT / "scripts" / "test_eval_workflow.py"',
+            'ROOT / ".github" / "workflows" / "validate.yml"',
+        ]:
+            self.assertIn(path_expression, source)
+
+
 if __name__ == "__main__":
     unittest.main()
