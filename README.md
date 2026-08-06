@@ -152,20 +152,21 @@ Typical expectation:
    mobile, tablet, and desktop, with screenshots or other useful artifacts.
 8. Run a targeted `doc-it` documentation gate, updating a canonical section or
    creating a page only when the final behavior needs durable coverage.
-9. Run a decision-promotion gate: discard ordinary planning detail, but extract
-   non-obvious long-lived decisions into the repository's canonical ADR,
-   architecture, or design documentation.
-10. Remove temporary workflow artifacts, review the exact candidate HEAD across
-    functional, code, and relevancy axes, and iterate until the verdict is
-    `ship`.
-11. Report decisions and evidence, then prepare a draft PR when GitHub work is
-    in scope.
+9. Retain the ignored spec, plan, run state, and necessary evidence while
+   reviewing the exact candidate HEAD across functional, code, and relevancy
+   axes. On `iterate`, update those artifacts and review the new candidate.
+10. After `ship`, run decision promotion. If canonical documentation changes,
+    review the new HEAD again. Only then remove temporary workflow artifacts and
+    prove they never entered the diff, staged state, or branch history.
+11. Resolve the expected GitHub account from user and repository instructions,
+    verify it with `gh api user --jq .login`, report decisions and evidence, and
+    prepare a draft PR when GitHub work is in scope.
 
 Project Track first approves an MVP Contract and an Architecture and Delivery
 Roadmap. It then delivers vertical milestones through Feature Track instead of
 turning the whole MVP into one giant spec, plan, or PR.
 
-Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR. Plans are always deleted; specs are deleted by default after any genuinely durable decisions have been extracted into concise canonical documentation.
+Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR. They stay available through review and iteration, then are deleted after `ship` once any genuinely durable decisions have been extracted into concise canonical documentation.
 
 ### Optional Hallmark Routing
 
@@ -181,14 +182,18 @@ Hallmark audits are advisory. Browser behavior, responsive quality,
 accessibility, and interaction still require the normal Playwright and UI/UX
 verification gates.
 
-## Behavioral Evaluations
+## Behavioral Smoke Evaluations
 
 The normal validator checks package structure and workflow invariants without
-calling a model. An additional opt-in black-box suite probes phase behavior
-against a temporary fixture repository: ambiguous discovery must not edit
-source, medium work must stop for spec approval, autonomous `no questions`
-must still produce a spec and plan, and UI planning must name browser scenarios
-plus the three-viewport quality gate.
+calling a model. An additional opt-in smoke suite probes phase behavior against
+a temporary fixture repository. It checks explicit phase outcomes, required
+temporary spec/plan artifacts, and every repository mutation, not only common
+source directories. Only ignored `output/workflow/` execution artifacts are
+allowed in stop-before-code cases.
+
+These are behavioral smoke signals, not proof of model behavior. Run repeated
+trials and compare the same prompt without the installed skill before treating
+a change as an improvement.
 
 Validate the case catalog without model usage:
 
@@ -202,15 +207,19 @@ Run the suite with a locally authenticated harness:
 ```bash
 python3 scripts/eval-workflow.py --harness codex --runs 3 --report /tmp/charlie-codex-eval.json
 python3 scripts/eval-workflow.py --harness claude --runs 3 --report /tmp/charlie-claude-eval.json
+python3 scripts/eval-workflow.py --harness codex --runs 3 --compare-control --report /tmp/charlie-control-eval.json
 ```
 
 Model evaluations are intentionally excluded from CI because they are metered,
 non-deterministic, and require local harness authentication. For another agent,
-use `--command-template` with `{workspace}`, `{prompt}`, or `{prompt_file}`.
+use `--harness custom --command-template` with `{workspace}`, `{prompt}`, or
+`{prompt_file}`.
 
 ## Validate
 
-The validator uses Codex's official skill validator. It expects PyYAML to be available to the Python interpreter running the validator.
+The validator uses a commit-pinned copy of Codex's official skill validator so
+local runs and CI execute the same checks. It expects PyYAML to be available to
+the Python interpreter running the validator.
 
 ```bash
 ./scripts/validate.sh
@@ -242,6 +251,9 @@ CODEX_HOME="$tmp/codex" ./scripts/install.sh --harness codex
    replacing the vendored folder.
 5. Run `./scripts/validate.sh`.
 6. Run `./scripts/install.sh --dry-run` and a temporary install smoke test.
+
+Pull requests run those package, contract, evaluation-catalog, and installer
+checks automatically through `.github/workflows/validate.yml`.
 
 ## License
 

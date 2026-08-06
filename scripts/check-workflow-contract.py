@@ -28,6 +28,18 @@ def require_absent(path: Path, phrases: list[str]) -> None:
         raise AssertionError(f"{path}: forbidden {present}")
 
 
+def require_ordered_text(path: Path, phrases: list[str]) -> None:
+    content = path.read_text(encoding="utf-8")
+    cursor = -1
+    for phrase in phrases:
+        position = content.find(phrase, cursor + 1)
+        if position < 0:
+            if phrase in content:
+                raise AssertionError(f"{path}: phrase out of order {phrase!r}")
+            raise AssertionError(f"{path}: missing ordered phrase {phrase!r}")
+        cursor = position
+
+
 def require_action_contract(path: Path) -> None:
     require_text(
         path,
@@ -92,6 +104,9 @@ def main() -> None:
             "spec_sha256",
             "spec_approval_evidence",
             "explicit user approval",
+            "Every interactive Small brief",
+            "complete Small request",
+            "explicit execution instruction",
             "No blocking questions",
             "blocker",
             "major",
@@ -118,15 +133,23 @@ def main() -> None:
             "emil-design-eng",
             "ui-ux-pro-max",
             "references/documentation-and-artifacts.md",
+            "Retain",
+            "Pre-review Artifact Safety Gate",
         ],
+    )
+    require_absent(
+        CHARLIE / "actions" / "05-verify-and-document.md",
+        ["Delete the implementation plan", "Temporary workflow artifacts are absent"],
     )
     require_text(
         CHARLIE / "references" / "documentation-and-artifacts.md",
         [
             "Durable Documentation Gate",
             "Decision Promotion Gate",
-            "Temporary Workflow Artifact Gate",
+            "Pre-review Artifact Safety Gate",
+            "Post-ship Artifact Cleanup Gate",
             "git log --format= --name-only --diff-filter=AMCR",
+            "git check-ignore -q",
             "Decision promotion: none",
             "Remaining gaps",
         ],
@@ -141,6 +164,21 @@ def main() -> None:
             "iterate",
             "reviewed_head",
             "unreviewed source changes",
+            "expected GitHub account",
+            "organization-owned repository",
+            "gh api user --jq .login",
+            "retained through review",
+        ],
+    )
+    require_ordered_text(
+        CHARLIE / "actions" / "06-review-and-publish.md",
+        [
+            "### 1. Review Candidate",
+            "### 2. Ship Verdict",
+            "### 3. Decision Promotion",
+            "### 4. Artifact Cleanup",
+            "### 5. GitHub Identity",
+            "### 6. Publish and Report",
         ],
     )
     state = json.loads(
@@ -222,8 +260,9 @@ def main() -> None:
             "Feature Track",
             "Project Track",
             "Hallmark",
-            "Behavioral Evaluations",
+            "Behavioral Smoke Evaluations",
             "three-viewport",
+            "--compare-control",
         ],
     )
     require_text(
@@ -236,8 +275,8 @@ def main() -> None:
             encoding="utf-8"
         )
     )
-    if eval_cases.get("schema_version") != 1:
-        raise AssertionError("Behavioral eval schema_version must be 1")
+    if eval_cases.get("schema_version") != 2:
+        raise AssertionError("Behavioral eval schema_version must be 2")
     cases = eval_cases.get("cases")
     if not isinstance(cases, list) or len(cases) < 4:
         raise AssertionError("At least four behavioral eval cases are required")
@@ -246,7 +285,9 @@ def main() -> None:
         "prompt",
         "required_output",
         "forbidden_output",
-        "forbid_source_changes",
+        "expected_phase",
+        "forbid_workspace_changes",
+        "required_artifacts",
     }
     for case in cases:
         if not isinstance(case, dict) or not required_case_keys.issubset(case):
@@ -262,7 +303,15 @@ def main() -> None:
         raise AssertionError("Behavioral eval suite is missing a required gate case")
     require_text(
         ROOT / "scripts" / "eval-workflow.py",
-        ["codex", "claude", "command-template", "forbid_source_changes"],
+        [
+            "codex",
+            "claude",
+            "custom",
+            "command-template",
+            "forbid_workspace_changes",
+            "unexpected_workspace_changes",
+            "compare-control",
+        ],
     )
 
     authored_files = [

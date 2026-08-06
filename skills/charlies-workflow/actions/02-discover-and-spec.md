@@ -40,8 +40,11 @@
    architecture has a meaningful choice. Recommend one.
 8. For Small work, present an in-conversation brief with goal, non-goals,
    affected surfaces, acceptance criteria, test cases, and browser scenarios.
-   Record the brief as approved or `not-required` only when the user already
-   supplied an equally complete contract.
+   Every interactive Small brief must be presented before planning. If the
+   brief adds or changes a material decision, stop for explicit approval.
+   Record `not-required` only when the user's request itself already contains
+   the complete brief and its explicit execution instruction is recorded as
+   approval evidence. Do not infer this status from a vague request.
 9. For Medium and Complex work, write the temporary spec in the ignored run
    directory. It must include context, user-visible behavior, scope/non-goals,
    contracts and invariants, acceptance criteria, edge/error cases, test and
@@ -49,10 +52,11 @@
 10. Scan the draft for an unstated assumption, ambiguous term, missing actor,
     edge case, failure mode, acceptance criterion, and dependency. Resolve all
     blocker and major findings before approval.
-11. In interactive mode, stop for explicit user approval of the written spec.
-    Approval of an idea or earlier answer is not approval of the spec. In
-    autonomous mode, record `auto-approved` only because the user explicitly
-    selected that mode.
+11. In interactive mode, stop for explicit user approval of the presented spec
+    or Small brief unless the complete Small-request rule above applies.
+    Approval of an idea or earlier answer is not approval of the presented
+    contract. In autonomous mode, record `auto-approved` only because the user
+    explicitly selected that mode.
 12. Record `spec_approval_evidence` as the current-conversation approval or the
     explicit instruction that authorized autonomous approval. Do not infer it
     from implementation permission alone.
@@ -67,7 +71,8 @@ Production edits remain blocked throughout this action.
 - Every material decision is `settled` or safely `deferred`; no blocker or
   major item remains `open`.
 - The proportional spec status is `approved`, `auto-approved`, or legitimately
-  `not-required` for a complete Small-work contract.
+  `not-required` because a complete Small request plus its explicit execution
+  instruction supplied the brief and approval evidence.
 - `spec_sha256` is recorded for every file-backed spec.
 - `spec_approval_evidence` identifies the current-conversation approval mode.
 - The state advances to `planning`; production files remain untouched.

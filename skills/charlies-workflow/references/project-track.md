@@ -1,5 +1,16 @@
 # Project Track
 
+## Contents
+
+- Hard Gates
+- Project Discovery
+- Product Framing
+- MVP Contract
+- Architecture and Delivery Roadmap
+- Canonical Project Baseline
+- Milestone Loop
+- Project Release Gate
+
 Use this reference only when Charlie's Workflow selected Project Track for a
 new product, greenfield application, or MVP. Project Track defines the program;
 each implementation milestone uses the base Feature Track.

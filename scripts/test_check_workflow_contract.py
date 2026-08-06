@@ -44,5 +44,38 @@ class RequireExplicitOnlyTests(unittest.TestCase):
             CONTRACT.require_explicit_only(metadata)
 
 
+class RequireOrderedTextTests(unittest.TestCase):
+    def test_accepts_required_lifecycle_order(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "action.md"
+            path.write_text(
+                "review candidate\nship verdict\npromote decisions\ndelete artifacts\npublish\n",
+                encoding="utf-8",
+            )
+            CONTRACT.require_ordered_text(
+                path,
+                [
+                    "review candidate",
+                    "ship verdict",
+                    "promote decisions",
+                    "delete artifacts",
+                    "publish",
+                ],
+            )
+
+    def test_rejects_cleanup_before_review(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "action.md"
+            path.write_text(
+                "delete artifacts\nreview candidate\nship verdict\npublish\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(AssertionError, "out of order"):
+                CONTRACT.require_ordered_text(
+                    path,
+                    ["review candidate", "ship verdict", "delete artifacts", "publish"],
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

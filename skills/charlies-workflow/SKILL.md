@@ -63,8 +63,8 @@ references it explicitly requires.
 | 2 | [Discover and Spec](actions/02-discover-and-spec.md) | Decision-complete intent and approved proportional spec |
 | 3 | [Plan](actions/03-plan.md) | Separate implementation plan derived from the approved spec |
 | 4 | [Implement](actions/04-implement.md) | Focused TDD implementation without requirement drift |
-| 5 | [Verify and Document](actions/05-verify-and-document.md) | Final checks, browser evidence, durable docs, and artifact cleanup |
-| 6 | [Review and Publish](actions/06-review-and-publish.md) | `ship` verdict on current HEAD, final report, and draft PR |
+| 5 | [Verify and Document](actions/05-verify-and-document.md) | Final checks, browser evidence, durable docs, and review-ready evidence |
+| 6 | [Review and Publish](actions/06-review-and-publish.md) | `ship` verdict, artifact finalization, final report, and draft PR |
 
 The normal state progression is:
 
@@ -134,16 +134,21 @@ the repository has no ignored workflow location, use an OS temporary directory
 instead of changing `.gitignore` solely for workflow artifacts.
 
 Update state only after the relevant Exit Test passes. The spec, plan, review
-notes, and state are execution aids. Remove them before publication after the
-decision-promotion gate. Never stage them, commit them, or retain them under
-`docs/superpowers/` unless the user explicitly requests a canonical design
-artifact and the documentation gate selects an appropriate permanent home.
+notes, state, and necessary evidence are execution aids. Retain them through
+consolidated review and every `iterate` loop, while keeping them ignored,
+unstaged, and outside branch history. After `ship` for the exact current HEAD,
+apply the decision-promotion and cleanup gates in
+[documentation-and-artifacts.md](references/documentation-and-artifacts.md).
+Never retain temporary files under `docs/superpowers/` unless the user
+explicitly requests a canonical design artifact and the documentation gate
+selects an appropriate permanent home.
 
 ## Hard Gates
 
 Production edits are blocked until the selected track and tier are recorded,
 discovery is complete, the proportional spec is approved or explicitly
-not-required, and the separate plan is ready or explicitly not-required.
+`not-required` under the complete Small-request rule, and the separate plan is
+ready or explicitly not-required.
 
 Publication is blocked until:
 
@@ -152,8 +157,9 @@ Publication is blocked until:
 - Meaningful UI passed functional browser QA and Verify Beyond the Obvious.
 - Documentation has one final status: `changed`, `current`, `not-needed`, or
   `declined-with-gap`.
-- Temporary artifacts are absent from the final diff and branch history.
 - Consolidated review returned `ship` for the exact current `reviewed_head`.
+- Decision promotion is final and temporary artifacts are absent from the
+  working tree, final diff, staged state, and branch history.
 - The worktree contains no unreviewed source changes.
 
 Pending generic CI or external reviewers may be reported after one query unless
@@ -169,5 +175,6 @@ the user or a child workflow requires waiting for a terminal result.
 | Quietly changing requirements during implementation | Invalidate the spec approval, revise, and replan |
 | Treating green tests as complete browser proof | Run functional QA and the separate responsive quality gate |
 | Reviewing a stale diff | Review again and replace `reviewed_head` |
+| Deleting the spec, plan, or state before review | Retain ignored artifacts through every `iterate` loop; clean them only after `ship` |
 | Keeping workflow transcripts as permanent docs | Promote only durable source-final behavior or non-obvious decisions |
 | Letting a child workflow duplicate Charlie | Keep the child as a narrow override layer |

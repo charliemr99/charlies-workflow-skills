@@ -2,6 +2,14 @@
 
 This repository vendors skills from multiple sources. Repo-owned packaging files are MIT licensed under `LICENSE`. Vendored third-party content remains under its original license.
 
+## OpenAI Skill Validator
+
+The repository includes the OpenAI `skill-creator` `quick_validate.py` script,
+pinned to `openai/skills` commit
+`49f948faa9258a0c61caceaf225e179651397431`. It is licensed under the Apache
+License 2.0. The complete license and provenance are in
+`scripts/vendor/openai-skill-creator/`.
+
 ## Hallmark
 
 Vendored skill:
