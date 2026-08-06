@@ -272,6 +272,7 @@ def main() -> None:
         CHARLIE / "references" / "project-track.md",
         CHARLIE / "references" / "hallmark-routing.md",
         CHARLIE / "references" / "documentation-and-artifacts.md",
+        CHARLIE / "agents" / "openai.yaml",
         ROOT / "README.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
         ROOT / "scripts" / "eval-workflow.py",
