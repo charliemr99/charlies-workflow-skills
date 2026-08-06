@@ -1,6 +1,6 @@
 interface:
   display_name: "Charlie's Workflow"
   short_description: "Feature and greenfield MVP delivery workflow"
-  default_prompt: "Use $charlies-workflow to select Feature or Project Track, complete discovery and approval gates, implement with proportional rigor, preserve only durable documentation, verify the final result, and open a draft PR."
+  default_prompt: "Use $charlies-workflow to select Feature or Project Track, complete discovery and explicit spec approval, derive the implementation plan in this conversation, implement with TDD, verify and document the final result, review the exact candidate HEAD, and open a draft PR."
 policy:
   allow_implicit_invocation: false

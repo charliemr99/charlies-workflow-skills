@@ -10,6 +10,7 @@ Follow this state sequence:
 
 ```text
 Project discovery complete
+-> Product Framing approved
 -> MVP Contract approved
 -> Architecture and Delivery Roadmap approved
 -> canonical project baseline current
@@ -19,8 +20,10 @@ Project discovery complete
 -> next milestone or project release gate
 ```
 
-Do not scaffold a repository, select a stack, edit production files, provision
-infrastructure, or create a giant MVP plan before the first two approvals.
+Do not select a stack or create a delivery roadmap before Product Framing and
+the MVP Contract are approved. Do not scaffold a repository, edit production
+files, or provision infrastructure before the Architecture and Delivery
+Roadmap is also approved.
 
 ## 1. Project Discovery
 
@@ -58,13 +61,43 @@ Use `brainstorming` / `superpowers:brainstorming` for project shaping. Present
 two or three viable product/technical approaches with tradeoffs and a
 recommendation before finalizing the contract.
 
+## 2. Product Framing
+
+Before locking the MVP Contract, state the product bet in one reviewable frame:
+
+- The opportunity, primary audience, painful job, and promised value.
+- Evidence already available versus assumptions still being made.
+- The riskiest assumption and the smallest credible validation check.
+- The behavior or signal expected after a user receives the value.
+- Why this product boundary is preferable to the considered alternatives.
+
+Obtain explicit approval of Product Framing in interactive mode. Autonomous
+mode may record an auto-approved framing only when the user explicitly selected
+that mode. Product Framing is not a marketing brief; it constrains what belongs
+in the MVP and what should remain outside it.
+
+### Decision Spike
+
+Use an optional Decision Spike only when one bounded uncertainty blocks
+feasibility, architecture, estimation, or a material risk decision. A spike:
+
+- asks one precise question and defines time, scope, and mutation boundaries;
+- names the evidence needed and objective exit criteria;
+- avoids production implementation and unrelated exploration;
+- concludes `resolved`, `inconclusive`, or `blocked`; and
+- folds the result into Product Framing, the MVP Contract, or the roadmap.
+
+An inconclusive spike does not silently become permission to implement. Resolve
+the uncertainty, change scope, or obtain explicit acceptance of the residual
+risk.
+
 ### Optional Hallmark Discovery
 
 Apply `hallmark-routing.md`. In Project Track, `hallmark study` may extract
 visual DNA from a user-approved reference during discovery, but Hallmark is
 still unnecessary when the product does not meet the routing conditions.
 
-## 2. MVP Contract
+## 3. MVP Contract
 
 Create a product-level spec that locks:
 
@@ -81,11 +114,12 @@ Present it in reviewable sections, self-review it for ambiguity, contradictions,
 placeholders, and oversized scope, then obtain explicit approval. Approval of a
 general idea is not approval of the written MVP Contract.
 
-In Codex Plan Mode, keep the contract in chat until execution mode resumes.
-Outside Plan Mode, store the temporary working contract under the ignored
-`output/workflow/<project-id>/` location required by the base skill.
+Store the temporary working contract under the ignored
+`output/workflow/<project-id>/` location required by the base skill. Present and
+approve it in the current conversation before deriving any implementation
+plan.
 
-## 3. Architecture and Delivery Roadmap
+## 4. Architecture and Delivery Roadmap
 
 After the MVP Contract is approved, define:
 
@@ -107,10 +141,10 @@ acceptance criteria, test/browser scenarios, documentation impact, and release
 relationship. Obtain explicit approval of the architecture and milestone
 roadmap before scaffolding or implementation.
 
-## 4. Canonical Project Baseline
+## 5. Canonical Project Baseline
 
-After both project approvals, promote only the durable shared context needed
-across milestones:
+After all three project approvals, promote only the durable shared context
+needed across milestones:
 
 - A concise product/MVP contract in the repository's canonical product
   documentation location.
@@ -128,7 +162,7 @@ They exclude question transcripts, TDD logs, approval history, file-by-file
 plans, and PR choreography. Temporary project specs and implementation plans
 remain ignored and are cleaned through the base artifact lifecycle.
 
-## 5. Milestone Loop
+## 6. Milestone Loop
 
 For each approved roadmap milestone:
 
@@ -153,7 +187,7 @@ Do not generate detailed implementation plans for all milestones up front.
 Write the next milestone plan against the repository state that will actually
 implement it.
 
-## 6. Project Release Gate
+## 7. Project Release Gate
 
 When all in-scope milestones are stable, verify the approved completion state:
 

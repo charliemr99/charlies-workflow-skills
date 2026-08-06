@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "run_id": "",
+  "track": "unselected",
+  "tier": "unselected",
+  "approval_mode": "interactive",
+  "execution_strategy": "unselected",
+  "phase": "grounding",
+  "discovery_status": "pending",
+  "spec_status": "pending",
+  "spec_path": null,
+  "spec_sha256": null,
+  "spec_approval_evidence": null,
+  "plan_status": "pending",
+  "plan_path": null,
+  "plan_source_spec_sha256": null,
+  "verification_head": null,
+  "reviewed_head": null,
+  "review_verdict": null,
+  "documentation_status": "pending"
+}

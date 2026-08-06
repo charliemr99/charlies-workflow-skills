@@ -23,6 +23,8 @@ This package is the workflow skill set GreenByte Studios uses for feature and
 new-project delivery:
 
 - `charlies-workflow` is the main orchestrator, with Feature and Project Tracks.
+- Its lean action router loads one phase contract at a time, records approval
+  state and spec fingerprints, and refuses to publish unreviewed source changes.
 - Superpowers-derived skills handle brainstorming, specs, implementation plans, TDD, worktrees, and execution when the task calls for them.
 - UI/UX skills support design quality, responsive review, and browser verification.
 - Hallmark provides optional visual-direction study, redesign, and anti-slop
@@ -134,22 +136,30 @@ MVP. It asks when both remain plausible after inspecting the environment.
 
 Typical expectation:
 
-1. Inspect repo context.
-2. Complete discovery and select Feature or Project Track.
-3. Classify the current feature or project milestone as small, medium, or complex.
-4. Ask once whether to execute inline or with subagents when the user has not already chosen.
-5. Create and approve the proportional spec before deriving an implementation plan.
-6. Implement with focused TDD.
-7. Keep a compact verification ledger and run one proportional final verification.
-8. Combine functional and visual browser QA into one final browser session when UI is in scope.
-9. Run a targeted `doc-it` documentation gate, updating a canonical section or
+1. Inspect repository truth, select Feature or Project Track, and classify risk.
+2. Resolve build-changing decisions through dynamic discovery instead of a
+   fixed question count.
+3. Create a proportional spec, obtain explicit approval in the current
+   conversation, and fingerprint the approved version.
+4. Derive a separate implementation plan from that exact spec. Medium and
+   complex work uses `writing-plans`; production edits remain blocked until the
+   plan is ready.
+5. Implement the plan with focused TDD and invalidate approvals when material
+   requirement drift appears.
+6. Run final unit, integration, static, build, and functional browser checks.
+7. Run **Verify Beyond the Obvious** as a separate UI/UX quality gate inside the
+   same browser session. Meaningful UI gets a three-viewport review at small
+   mobile, tablet, and desktop, with screenshots or other useful artifacts.
+8. Run a targeted `doc-it` documentation gate, updating a canonical section or
    creating a page only when the final behavior needs durable coverage.
-10. Run a decision-promotion gate: discard ordinary planning detail, but extract
+9. Run a decision-promotion gate: discard ordinary planning detail, but extract
    non-obvious long-lived decisions into the repository's canonical ADR,
    architecture, or design documentation.
-11. Remove temporary workflow artifacts before publication.
-12. Report documentation and promotion status with the other outcomes, then
-    prepare a draft PR when GitHub work is in scope.
+10. Remove temporary workflow artifacts, review the exact candidate HEAD across
+    functional, code, and relevancy axes, and iterate until the verdict is
+    `ship`.
+11. Report decisions and evidence, then prepare a draft PR when GitHub work is
+    in scope.
 
 Project Track first approves an MVP Contract and an Architecture and Delivery
 Roadmap. It then delivers vertical milestones through Feature Track instead of
@@ -170,6 +180,33 @@ explicitly requests it.
 Hallmark audits are advisory. Browser behavior, responsive quality,
 accessibility, and interaction still require the normal Playwright and UI/UX
 verification gates.
+
+## Behavioral Evaluations
+
+The normal validator checks package structure and workflow invariants without
+calling a model. An additional opt-in black-box suite probes phase behavior
+against a temporary fixture repository: ambiguous discovery must not edit
+source, medium work must stop for spec approval, autonomous `no questions`
+must still produce a spec and plan, and UI planning must name browser scenarios
+plus the three-viewport quality gate.
+
+Validate the case catalog without model usage:
+
+```bash
+python3 scripts/eval-workflow.py --validate-cases
+python3 scripts/eval-workflow.py --list
+```
+
+Run the suite with a locally authenticated harness:
+
+```bash
+python3 scripts/eval-workflow.py --harness codex --runs 3 --report /tmp/charlie-codex-eval.json
+python3 scripts/eval-workflow.py --harness claude --runs 3 --report /tmp/charlie-claude-eval.json
+```
+
+Model evaluations are intentionally excluded from CI because they are metered,
+non-deterministic, and require local harness authentication. For another agent,
+use `--command-template` with `{workspace}`, `{prompt}`, or `{prompt_file}`.
 
 ## Validate
 
