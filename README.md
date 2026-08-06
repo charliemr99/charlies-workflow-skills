@@ -173,7 +173,9 @@ verification gates.
 
 ## Validate
 
-The validator uses Codex's official skill validator. It expects PyYAML to be available to the Python interpreter running the validator.
+The validator uses a commit-pinned copy of Codex's official skill validator so
+local runs and CI execute the same checks. It expects PyYAML to be available to
+the Python interpreter running the validator.
 
 ```bash
 ./scripts/validate.sh
@@ -205,6 +207,9 @@ CODEX_HOME="$tmp/codex" ./scripts/install.sh --harness codex
    replacing the vendored folder.
 5. Run `./scripts/validate.sh`.
 6. Run `./scripts/install.sh --dry-run` and a temporary install smoke test.
+
+Pull requests run those package, contract, and installer checks automatically
+through `.github/workflows/validate.yml`.
 
 ## License
 
