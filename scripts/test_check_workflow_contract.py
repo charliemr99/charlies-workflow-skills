@@ -95,7 +95,10 @@ class AuthoredFileCoverageTests(unittest.TestCase):
             'ROOT / "scripts" / "test_check_workflow_contract.py"',
             'ROOT / "scripts" / "eval-workflow.py"',
             'ROOT / "scripts" / "test_eval_workflow.py"',
+            'ROOT / "scripts" / "install.sh"',
+            'ROOT / "scripts" / "validate.sh"',
             'ROOT / ".github" / "workflows" / "validate.yml"',
+            'ROOT / "scripts" / "vendor" / "openai-skill-creator" / "NOTICE.md"',
         ]:
             self.assertIn(path_expression, source)
 
