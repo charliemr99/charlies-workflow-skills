@@ -32,20 +32,28 @@ for the pre-review, decision-promotion, and post-ship cleanup contracts.
    - `relevancy`: scope discipline, duplication, unnecessary abstraction,
      repository rules, and whether the delivered behavior solves the approved
      problem.
-3. Assign the strictest consolidated verdict: `ship` only when every axis
+3. Apply the automatic simplicity review in
+   [`ponytail-routing.md`](../references/ponytail-routing.md). Run
+   `ponytail-review` / `ponytail:ponytail-review` on the exact candidate diff
+   when Ponytail was active or the diff has material complexity signals. Feed
+   valid findings into `relevancy`; disposition invalid findings with evidence.
+   Record `simplicity_review_status` as `not-selected`, `lean`,
+   `findings-addressed`, or `unavailable`. The line-reduction estimate is
+   informative, not an acceptance target.
+4. Assign the strictest consolidated verdict: `ship` only when every axis
    passes; otherwise `iterate` with concrete findings.
 
 ### 2. Ship Verdict
 
-4. On `iterate`, retain and update the temporary artifacts, return to
+5. On `iterate`, retain and update the temporary artifacts, return to
    implementation, fix the findings, commit the new candidate, rerun invalidated
    checks, and review the new HEAD. Never carry a verdict across a source change.
-5. On `ship`, store the exact commit as `reviewed_head` and the evidence
+6. On `ship`, store the exact commit as `reviewed_head` and the evidence
    identity as `verification_head` in run state.
 
 ### 3. Decision Promotion
 
-6. Only after `ship`, run the Decision Promotion Gate. If promotion changes
+7. Only after `ship`, run the Decision Promotion Gate. If promotion changes
    tracked canonical documentation, commit it, invalidate `reviewed_head` and
    affected verification, and repeat review with the temporary artifacts still
    retained. Continue until `ship` applies to the source-final HEAD and decision
@@ -53,17 +61,17 @@ for the pre-review, decision-promotion, and post-ship cleanup contracts.
 
 ### 4. Artifact Cleanup
 
-7. Capture the final state values needed by the delivery report, then delete
+8. Capture the final state values needed by the delivery report, then delete
    this run's plan, working spec, run state, disposable evidence, and review
    notes. Run the Post-ship Artifact Cleanup Gate against the working tree,
    staged state, final diff, and branch history. Cleanup is blocked before
    `ship` and must not delete unrelated historical artifacts.
-8. Verify current HEAD still equals `reviewed_head` and there are no unreviewed
+9. Verify current HEAD still equals `reviewed_head` and there are no unreviewed
    source changes.
 
 ### 5. GitHub Identity
 
-9. Determine the expected GitHub account from, in order, an explicit user
+10. Determine the expected GitHub account from, in order, an explicit user
    instruction, repository instructions, and authenticated access/provenance.
    Confirm with the user when those sources are ambiguous. Repository-owner
    equality is only a clue for personal repositories and is not required for an
@@ -72,12 +80,12 @@ for the pre-review, decision-promotion, and post-ship cleanup contracts.
 
 ### 6. Publish and Report
 
-10. Use `pr-title-and-description` to prepare an accurate title and body. Open a
+11. Use `pr-title-and-description` to prepare an accurate title and body. Open a
    draft PR by default; do not merge or deploy without explicit authorization.
-11. Query generic CI and external review once after publication. Pending results
+12. Query generic CI and external review once after publication. Pending results
    may be reported unless the user or a child workflow defines a stricter wait
    contract.
-12. Produce a concise but complete final report containing:
+13. Produce a concise but complete final report containing:
     - executive outcome and user-visible behavior;
     - files or major surfaces changed and important decisions;
     - tests run with exact outcomes;
@@ -87,11 +95,14 @@ for the pre-review, decision-promotion, and post-ship cleanup contracts.
     - spec and plan lifecycle status, normally `retained through review, then
       removed after ship`;
     - consolidated review verdict and exact `reviewed_head`;
+    - selected Ponytail mode and reason plus simplicity review disposition;
     - draft PR link and current CI/external-review state.
 
 ## Exit Test
 
 - Consolidated verdict is `ship` for the exact current HEAD.
+- `simplicity_review_status` reflects the automatic routing decision for the
+  exact candidate diff.
 - Decision promotion is final, cleanup occurred after `ship`, and the
   publication check finds no temporary artifacts or unreviewed source changes.
 - The draft PR exists, or a user opt-out or exact publication blocker is

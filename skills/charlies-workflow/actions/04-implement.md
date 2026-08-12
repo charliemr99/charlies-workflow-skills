@@ -25,13 +25,18 @@
      test.
    - REFACTOR: improve structure only while all relevant focused tests remain
      green.
-4. Use repository patterns and domain libraries. Keep edits within the planned
+4. When Ponytail is active, apply it only after tracing callers and ownership
+   boundaries. Prefer repository reuse, standard-library or native behavior,
+   installed dependencies, and one shared root-cause fix. Deliver the smallest
+   complete behavior that satisfies every approved acceptance criterion;
+   never simplify away planned evidence or safety.
+5. Use repository patterns and domain libraries. Keep edits within the planned
    ownership boundaries and avoid opportunistic refactors.
-5. Run narrow static checks during the loop when they catch local mistakes
+6. Run narrow static checks during the loop when they catch local mistakes
    cheaply. Save broad regression checks for the final candidate.
-6. Update the verification ledger with command, outcome, affected behavior,
+7. Update the verification ledger with command, outcome, affected behavior,
    and evidence. A source change invalidates prior evidence for impacted paths.
-7. When subagents were selected, give each one a bounded deliverable. Workers
+8. When subagents were selected, give each one a bounded deliverable. Workers
    may not edit the spec, acceptance criteria, implementation plan, or workflow
    state.
 

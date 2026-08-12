@@ -45,9 +45,10 @@ Apply rules in this order:
 
 Charlie owns sequencing and gates. `brainstorming` owns discovery technique,
 `writing-plans` owns plan quality, TDD owns the RED/GREEN loop, UI skills own
-design critique, `doc-it` owns documentation quality, and PR skills own PR text.
-A helper may not change the selected track, skip a gate, commit temporary
-artifacts, or broaden its phase.
+design critique, optional Ponytail skills own simplicity analysis, `doc-it`
+owns documentation quality, and PR skills own PR text. A helper may not change
+the selected track, skip a gate, commit temporary artifacts, or broaden its
+phase.
 
 `No blocking questions` is a discovery conclusion backed by repository facts
 and explicit assumptions, never a shortcut around the discovery action.
@@ -117,6 +118,14 @@ Load a helper only when the current action needs it:
 - `emil-design-eng` and `ui-ux-pro-max`: meaningful UI and the required
   responsive quality gate.
 - `hallmark`: only under [hallmark-routing.md](references/hallmark-routing.md).
+- `ponytail` / `ponytail:ponytail`: automatically when the coding task has
+  material simplification signals under
+  [ponytail-routing.md](references/ponytail-routing.md); never auto-select
+  `ultra`.
+- `ponytail-review` / `ponytail:ponytail-review`: automatically for a relevant
+  candidate diff; feeds the existing `relevancy` review axis.
+- `ponytail-audit` / `ponytail:ponytail-audit`: only when the requested task is
+  itself a repo-wide complexity audit, never as feature scope expansion.
 - `playwright-interactive` or `playwright`: browser verification.
 - `doc-it`: targeted durable documentation review.
 - `pr-title-and-description`: PR publication.
@@ -174,6 +183,8 @@ the user or a child workflow requires waiting for a terminal result.
 | Writing the plan before approval | Return to Discover and Spec; planning consumes an approved spec digest |
 | Quietly changing requirements during implementation | Invalidate the spec approval, revise, and replan |
 | Treating green tests as complete browser proof | Run functional QA and the separate responsive quality gate |
+| Treating Ponytail as permission to cut requirements or proof | Simplify implementation only; preserve approved behavior and every Charlie gate |
+| Running `ponytail-audit` during a scoped feature | Recommend a separate audit; keep unrelated repo findings out of the PR |
 | Reviewing a stale diff | Review again and replace `reviewed_head` |
 | Deleting the spec, plan, or state before review | Retain ignored artifacts through every `iterate` loop; clean them only after `ship` |
 | Keeping workflow transcripts as permanent docs | Promote only durable source-final behavior or non-obvious decisions |

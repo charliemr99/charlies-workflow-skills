@@ -29,17 +29,21 @@ it does not happen implicitly while implementation begins.
 4. Project architecture onto exact files and ownership boundaries. Each task
    must state its purpose, expected behavior, implementation steps, focused
    test command, and completion signal.
-5. Map every acceptance criterion to at least one task and one proof point.
-6. Plan TDD explicitly: the failing assertion and reason for RED, the smallest
+5. When Ponytail is active, include a concise `simplicity proof` for tasks that
+   may add dependencies, abstractions, or ownership surfaces: repository reuse
+   searched, first viable Ponytail rung, and why lower-ownership options are
+   insufficient. Skip this note when no real design choice exists.
+6. Map every acceptance criterion to at least one task and one proof point.
+7. Plan TDD explicitly: the failing assertion and reason for RED, the smallest
    GREEN implementation, and any justified REFACTOR step.
-7. Plan unit and integration cases, edge/error behavior, browser scenarios,
+8. Plan unit and integration cases, edge/error behavior, browser scenarios,
    downstream impact, and final regression commands before implementation.
-8. For meaningful UI, include the functional browser scenario matrix and the
+9. For meaningful UI, include the functional browser scenario matrix and the
    separate three-viewport quality review with named screenshots or artifacts.
-9. Include documentation impact, rollout/rollback work, and temporary-artifact
+10. Include documentation impact, rollout/rollback work, and temporary-artifact
    cleanup.
-10. Reject placeholders and vague tasks such as "add tests" or "verify UI".
-11. If the plan introduces a product, architecture, security, migration, cost,
+11. Reject placeholders and vague tasks such as "add tests" or "verify UI".
+12. If the plan introduces a product, architecture, security, migration, cost,
     or rollout decision absent from the approved spec, return to discovery,
     revise the spec, obtain approval again, and regenerate the plan.
 

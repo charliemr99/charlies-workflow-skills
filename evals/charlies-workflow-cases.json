@@ -95,6 +95,31 @@
           ]
         }
       ]
+    },
+    {
+      "id": "automatic-ponytail-routing",
+      "prompt": "$charlies-workflow\nTrack: feature\nTier: medium\nInteractive mode. Add Moment.js solely to format one timestamp already rendered by this small browser application. Inspect the fixture, automatically evaluate whether Ponytail is relevant, produce the proportional spec, and stop before implementation when approval is required. Do not edit repository source or configuration. End with `Workflow phase: awaiting-spec-approval`.",
+      "expected_phase": "awaiting-spec-approval",
+      "required_output": [
+        "(?i)workflow phase:\\s*awaiting-spec-approval",
+        "(?i)(ponytail|simplicity mode)",
+        "(?i)(lite|full|unavailable)",
+        "(?i)(intl\\.datetimeformat|native|dependency)"
+      ],
+      "forbidden_output": [
+        "(?i)(implementation complete|implemented successfully|draft pr|starting implementation|beginning tdd|ponytail ultra)"
+      ],
+      "forbid_workspace_changes": true,
+      "required_artifacts": [
+        {
+          "glob": "output/workflow/**/*.md",
+          "min_matches": 1,
+          "required_content": [
+            "(?i)(acceptance criteria|criterios de aceptaci)",
+            "(?i)(moment|intl\\.datetimeformat|dependency|native)"
+          ]
+        }
+      ]
     }
   ]
 }

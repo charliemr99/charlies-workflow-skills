@@ -12,8 +12,8 @@
 - Selected `Small`, `Medium`, or `Complex` tier.
 - Approval mode: `interactive` by default or `autonomous` only when explicitly
   requested.
-- Execution strategy, minimal skill set, affected surfaces, and initialized run
-  state.
+- Execution strategy, automatic Ponytail mode and reason, minimal skill set,
+  affected surfaces, and initialized run state.
 
 ## Process
 
@@ -29,12 +29,20 @@
 5. Classify risk, not just diff size. Authentication, authorization, money,
    migration, infrastructure, security, destructive behavior, and broad
    compatibility normally force `Complex`.
-6. Select only the skills needed for the current phase. Record why each was
-   selected.
-7. For Medium or Complex work, initialize a run directory from
+6. For coding work, evaluate the automatic simplicity routing in
+   [`ponytail-routing.md`](../references/ponytail-routing.md). Keep
+   `ponytail_routing` as `auto` unless the user explicitly selects or disables
+   it. Record `ponytail_mode` and evidence-backed `ponytail_reason`; the maximum
+   automatic intensity is `full`, and `ultra` always requires an explicit user
+   request. Do not ask a separate Ponytail mode question. Use `unavailable`
+   when relevant support cannot be loaded.
+7. Select only the skills needed for the current phase. Record why each was
+   selected. Load Ponytail only when the routing decision selects it and the
+   helper is available, passing the exact selected intensity.
+8. For Medium or Complex work, initialize a run directory from
    `../assets/run-state-template.json`. Confirm the path is ignored, or use an
    OS temporary directory. Never modify `.gitignore` solely for workflow state.
-8. Treat `no questions`, `auto`, or `autonomous` as an approval-mode choice.
+9. Treat `no questions`, `auto`, or `autonomous` as an approval-mode choice.
    It does not remove discovery, spec, plan, TDD, verification, documentation,
    or review requirements.
 
@@ -42,8 +50,8 @@ Do not edit production code during this action.
 
 ## Exit Test
 
-- Track, tier, approval mode, execution strategy, and selected skills are
-  recorded.
+- Track, tier, approval mode, execution strategy, Ponytail routing decision,
+  and selected skills are recorded.
 - Repository truth, affected surfaces, constraints, and material risks are
   known well enough to begin discovery.
 - Unrelated work is protected and the run state has advanced to `discovery`.

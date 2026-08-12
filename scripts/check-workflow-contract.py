@@ -71,8 +71,12 @@ def main() -> None:
             "Project Track",
             "references/project-track.md",
             "references/hallmark-routing.md",
+            "references/ponytail-routing.md",
             "No blocking questions",
             "hallmark",
+            "ponytail",
+            "ponytail-review",
+            "ponytail-audit",
             "actions/01-ground-and-route.md",
             "actions/02-discover-and-spec.md",
             "actions/03-plan.md",
@@ -96,6 +100,17 @@ def main() -> None:
         require_action_contract(CHARLIE / "actions" / action)
 
     require_text(
+        CHARLIE / "actions" / "01-ground-and-route.md",
+        [
+            "ponytail_routing",
+            "ponytail_mode",
+            "automatic",
+            "ultra",
+            "Do not ask a separate Ponytail mode question",
+            "references/ponytail-routing.md",
+        ],
+    )
+    require_text(
         CHARLIE / "actions" / "02-discover-and-spec.md",
         [
             "settled",
@@ -110,6 +125,7 @@ def main() -> None:
             "No blocking questions",
             "blocker",
             "major",
+            "Ponytail",
         ],
     )
     require_text(
@@ -121,6 +137,15 @@ def main() -> None:
             "acceptance criterion",
             "browser scenario",
             "production edits remain blocked",
+            "simplicity proof",
+        ],
+    )
+    require_text(
+        CHARLIE / "actions" / "04-implement.md",
+        [
+            "Ponytail",
+            "smallest complete behavior",
+            "acceptance criteria",
         ],
     )
     require_text(
@@ -168,6 +193,8 @@ def main() -> None:
             "organization-owned repository",
             "gh api user --jq .login",
             "retained through review",
+            "ponytail-review",
+            "simplicity_review_status",
         ],
     )
     require_ordered_text(
@@ -200,11 +227,31 @@ def main() -> None:
         "reviewed_head",
         "review_verdict",
         "documentation_status",
+        "ponytail_routing",
+        "ponytail_mode",
+        "ponytail_reason",
+        "simplicity_review_status",
     }
     missing_state_keys = sorted(required_state_keys - set(state))
     if missing_state_keys:
         raise AssertionError(
             f"run-state-template.json: missing {missing_state_keys}"
+        )
+    expected_state_defaults = {
+        "ponytail_routing": "auto",
+        "ponytail_mode": "unselected",
+        "ponytail_reason": None,
+        "simplicity_review_status": "pending",
+    }
+    invalid_state_defaults = {
+        key: state.get(key)
+        for key, expected in expected_state_defaults.items()
+        if state.get(key) != expected
+    }
+    if invalid_state_defaults:
+        raise AssertionError(
+            "run-state-template.json: invalid Ponytail defaults "
+            f"{invalid_state_defaults}"
         )
     require_text(
         CHARLIE / "references" / "project-track.md",
@@ -228,6 +275,24 @@ def main() -> None:
             "hallmark audit",
             "Normally skip Hallmark",
             "Do not commit `.hallmark/`",
+        ],
+    )
+    require_text(
+        CHARLIE / "references" / "ponytail-routing.md",
+        [
+            "Automatic Selection",
+            "lite",
+            "full",
+            "Never select `ultra` automatically",
+            "Do not ask a separate Ponytail mode question",
+            "exact mode",
+            "ponytail-review",
+            "Ponytail Audit Boundary",
+            "ponytail-audit",
+            "repo-wide",
+            "unavailable",
+            "security",
+            "accessibility",
         ],
     )
     require_explicit_only(CHARLIE / "agents" / "openai.yaml")
@@ -260,6 +325,8 @@ def main() -> None:
             "Feature Track",
             "Project Track",
             "Hallmark",
+            "Automatic Ponytail Routing",
+            "Ponytail plugin",
             "Behavioral Smoke Evaluations",
             "three-viewport",
             "--compare-control",
@@ -278,8 +345,8 @@ def main() -> None:
     if eval_cases.get("schema_version") != 2:
         raise AssertionError("Behavioral eval schema_version must be 2")
     cases = eval_cases.get("cases")
-    if not isinstance(cases, list) or len(cases) < 4:
-        raise AssertionError("At least four behavioral eval cases are required")
+    if not isinstance(cases, list) or len(cases) < 5:
+        raise AssertionError("At least five behavioral eval cases are required")
     required_case_keys = {
         "id",
         "prompt",
@@ -297,6 +364,7 @@ def main() -> None:
         "medium-feature-requires-spec-approval",
         "autonomous-medium-still-plans",
         "ui-plan-covers-browser-and-viewports",
+        "automatic-ponytail-routing",
     }
     case_ids = {case["id"] for case in cases}
     if not required_case_ids.issubset(case_ids):
@@ -320,6 +388,7 @@ def main() -> None:
         CHARLIE / "assets" / "run-state-template.json",
         CHARLIE / "references" / "project-track.md",
         CHARLIE / "references" / "hallmark-routing.md",
+        CHARLIE / "references" / "ponytail-routing.md",
         CHARLIE / "references" / "documentation-and-artifacts.md",
         CHARLIE / "agents" / "openai.yaml",
         ROOT / "README.md",

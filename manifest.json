@@ -11,7 +11,7 @@
       "ownership": "charlie-owned",
       "upstream": null,
       "source_path": "/Users/charliemartinez/.codex/skills/charlies-workflow",
-      "notes": "Explicit-only lean action router for Feature and Project Track delivery with spec fingerprints, review freshness, and behavioral evals."
+      "notes": "Explicit-only lean action router for Feature and Project Track delivery with spec fingerprints, review freshness, behavioral evals, and capability-aware automatic Ponytail routing."
     },
     {
       "name": "hallmark",
