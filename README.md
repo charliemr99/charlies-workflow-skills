@@ -136,7 +136,8 @@ MVP. It asks when both remain plausible after inspecting the environment.
 
 Typical expectation:
 
-1. Inspect repository truth, select Feature or Project Track, and classify risk.
+1. Inspect repository truth, select Feature or Project Track, classify risk,
+   and automatically assess optional Ponytail routing.
 2. Resolve build-changing decisions through dynamic discovery instead of a
    fixed question count.
 3. Create a proportional spec, obtain explicit approval in the current
@@ -181,6 +182,39 @@ explicitly requests it.
 Hallmark audits are advisory. Browser behavior, responsive quality,
 accessibility, and interaction still require the normal Playwright and UI/UX
 verification gates.
+
+### Automatic Ponytail Routing
+
+Charlie's Workflow automatically evaluates whether Ponytail can materially
+reduce implementation or maintenance cost. It records `off`, `lite`, `full`,
+or `unavailable` with an evidence-backed reason; `ultra` always requires an
+explicit user request. Typical signals include new dependencies, speculative
+abstractions, duplicated helpers, native-platform alternatives, and bugs with a
+shared root-cause path.
+
+When relevant, `ponytail-review` contributes a focused over-engineering pass to
+Charlie's existing relevancy review. It does not replace correctness, security,
+TDD, browser QA, or the final report. `ponytail-audit` remains repo-wide and is
+only routed automatically when the requested task is itself a whole-repository
+complexity audit.
+
+The Ponytail plugin is an optional integration and is not vendored by this
+bundle. Without it, Charlie records `unavailable` and continues with the normal
+workflow. Install it from
+[`DietrichGebert/ponytail`](https://github.com/DietrichGebert/ponytail) when you
+want automatic simplicity support. For Codex:
+
+```bash
+codex plugin marketplace add DietrichGebert/ponytail
+codex plugin add ponytail@ponytail
+```
+
+Charlie accepts both local names such as `ponytail-review` and plugin-qualified
+names such as `ponytail:ponytail-review`, without pinning a machine-local plugin
+path. See the upstream repository for Claude Code and Cursor installation
+options. On a rule-only adapter, Ponytail may be always-on instead of
+selectively invoked; Charlie's requirements, safety, and review gates still
+take precedence.
 
 ## Behavioral Smoke Evaluations
 

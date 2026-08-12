@@ -27,6 +27,7 @@ class EvalWorkflowTests(unittest.TestCase):
                 "medium-feature-requires-spec-approval",
                 "autonomous-medium-still-plans",
                 "ui-plan-covers-browser-and-viewports",
+                "automatic-ponytail-routing",
             },
         )
 
