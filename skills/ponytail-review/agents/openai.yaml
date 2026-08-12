@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ponytail Review"
+  short_description: "Review a diff for unnecessary complexity"
+  default_prompt: "Use $ponytail-review to find removable complexity in the current diff without applying changes."
+policy:
+  allow_implicit_invocation: false

@@ -1,0 +1,6 @@
+interface:
+  display_name: "Ponytail"
+  short_description: "Choose the smallest complete coding solution"
+  default_prompt: "Use $ponytail full to implement the smallest complete solution that preserves correctness and required safeguards."
+policy:
+  allow_implicit_invocation: false

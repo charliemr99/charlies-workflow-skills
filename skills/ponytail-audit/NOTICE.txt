@@ -1,0 +1,10 @@
+Ponytail Audit skill
+
+Source: https://github.com/DietrichGebert/ponytail
+Release: v4.9.0
+Reviewed commit: 0a4dd63ad4541f4f655c4108a295916f3c1d8fda
+
+Copyright (c) 2026 DietrichGebert
+Licensed under the MIT License in LICENSE.txt.
+
+The upstream SKILL.md is unmodified. Packaging adds Codex interface metadata.

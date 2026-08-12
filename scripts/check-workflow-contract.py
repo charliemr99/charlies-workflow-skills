@@ -12,6 +12,9 @@ import yaml
 ROOT = Path(__file__).resolve().parents[1]
 CHARLIE = ROOT / "skills" / "charlies-workflow"
 HALLMARK = ROOT / "skills" / "hallmark"
+PONYTAIL_SKILLS = ("ponytail", "ponytail-review", "ponytail-audit")
+PONYTAIL_VERSION = "4.9.0"
+PONYTAIL_COMMIT = "0a4dd63ad4541f4f655c4108a295916f3c1d8fda"
 
 
 def require_text(path: Path, phrases: list[str]) -> None:
@@ -319,6 +322,33 @@ def main() -> None:
     if hallmark.get("upstream_commit") != "aeb42fb354ff4efa36ab475773a082315a3af2ce":
         raise AssertionError("manifest.json does not pin the reviewed Hallmark commit")
 
+    for skill_name in PONYTAIL_SKILLS:
+        skill_dir = ROOT / "skills" / skill_name
+        if not (skill_dir / "SKILL.md").is_file():
+            raise AssertionError(f"Bundled {skill_name} skill is missing")
+        if not (skill_dir / "LICENSE.txt").is_file():
+            raise AssertionError(f"Bundled {skill_name} license is missing")
+        require_explicit_only(skill_dir / "agents" / "openai.yaml")
+        require_text(
+            skill_dir / "NOTICE.txt",
+            [
+                "DietrichGebert/ponytail",
+                f"v{PONYTAIL_VERSION}",
+                PONYTAIL_COMMIT,
+                "unmodified",
+            ],
+        )
+        manifest_skill = next(
+            (skill for skill in manifest["skills"] if skill["name"] == skill_name),
+            None,
+        )
+        if manifest_skill is None:
+            raise AssertionError(f"manifest.json does not list {skill_name}")
+        if manifest_skill.get("version") != PONYTAIL_VERSION:
+            raise AssertionError(f"manifest.json has the wrong {skill_name} version")
+        if manifest_skill.get("upstream_commit") != PONYTAIL_COMMIT:
+            raise AssertionError(f"manifest.json does not pin {skill_name}")
+
     require_text(
         ROOT / "README.md",
         [
@@ -327,6 +357,9 @@ def main() -> None:
             "Hallmark",
             "Automatic Ponytail Routing",
             "Ponytail plugin",
+            "`ponytail-review`",
+            "`ponytail-audit`",
+            "normal package install is enough",
             "Behavioral Smoke Evaluations",
             "three-viewport",
             "--compare-control",
@@ -334,7 +367,13 @@ def main() -> None:
     )
     require_text(
         ROOT / "THIRD_PARTY_NOTICES.md",
-        ["Hallmark", "Nutlope/hallmark"],
+        [
+            "Hallmark",
+            "Nutlope/hallmark",
+            "Ponytail",
+            "DietrichGebert/ponytail",
+            PONYTAIL_COMMIT,
+        ],
     )
 
     eval_cases = json.loads(
@@ -391,6 +430,7 @@ def main() -> None:
         CHARLIE / "references" / "ponytail-routing.md",
         CHARLIE / "references" / "documentation-and-artifacts.md",
         CHARLIE / "agents" / "openai.yaml",
+        *(ROOT / "skills" / name / "NOTICE.txt" for name in PONYTAIL_SKILLS),
         ROOT / "README.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
         ROOT / "scripts" / "check-workflow-contract.py",

@@ -14,6 +14,36 @@
       "notes": "Explicit-only lean action router for Feature and Project Track delivery with spec fingerprints, review freshness, behavioral evals, and capability-aware automatic Ponytail routing."
     },
     {
+      "name": "ponytail",
+      "category": "simplicity",
+      "ownership": "third-party",
+      "upstream": "DietrichGebert/ponytail",
+      "version": "4.9.0",
+      "upstream_commit": "0a4dd63ad4541f4f655c4108a295916f3c1d8fda",
+      "source_path": "skills/ponytail",
+      "notes": "MIT-licensed Ponytail implementation guidance pinned to v4.9.0; frontmatter adapted for validator compatibility."
+    },
+    {
+      "name": "ponytail-review",
+      "category": "simplicity",
+      "ownership": "third-party",
+      "upstream": "DietrichGebert/ponytail",
+      "version": "4.9.0",
+      "upstream_commit": "0a4dd63ad4541f4f655c4108a295916f3c1d8fda",
+      "source_path": "skills/ponytail-review",
+      "notes": "Unmodified MIT-licensed diff review skill pinned to Ponytail v4.9.0."
+    },
+    {
+      "name": "ponytail-audit",
+      "category": "simplicity",
+      "ownership": "third-party",
+      "upstream": "DietrichGebert/ponytail",
+      "version": "4.9.0",
+      "upstream_commit": "0a4dd63ad4541f4f655c4108a295916f3c1d8fda",
+      "source_path": "skills/ponytail-audit",
+      "notes": "Unmodified MIT-licensed repository audit skill pinned to Ponytail v4.9.0."
+    },
+    {
       "name": "hallmark",
       "category": "ui-ux",
       "ownership": "third-party",

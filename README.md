@@ -34,6 +34,7 @@ features, fewer dependencies, or less abstraction.
   `subagent-driven-development`
 - UI and browser QA: `emil-design-eng`, `ui-ux-pro-max`, `hallmark`,
   `playwright`, `playwright-interactive`
+- Simplicity: `ponytail`, `ponytail-review`, `ponytail-audit`
 - Documentation and GitHub: `doc-it`, `pr-title-and-description`
 
 ## Install
@@ -84,10 +85,16 @@ same planning and quality gates.
 ### Optional Integrations
 
 - **Hallmark** is bundled and selected only for appropriate visual work.
-- **Ponytail** is not bundled. Install the
-  [Ponytail plugin](https://github.com/DietrichGebert/ponytail) to enable
-  automatic `lite` or `full` simplicity guidance and diff review. `ultra`
-  remains explicit, and repo-wide audits do not expand normal feature scope.
+- **Ponytail** skills are bundled, so the normal package install is enough for
+  automatic `lite` or `full` routing and diff review. `ultra` remains explicit,
+  and repo-wide audits do not expand normal feature scope. Install the full
+  [Ponytail plugin](https://github.com/DietrichGebert/ponytail) separately only
+  when you also want its always-on hooks and commands.
+
+```bash
+codex plugin marketplace add DietrichGebert/ponytail
+codex plugin add ponytail@ponytail
+```
 
 ## Validate
 
