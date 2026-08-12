@@ -4,124 +4,71 @@
 
 # Charlie's Workflow Skills
 
-Reusable Agent Skills for Charlie's end-to-end development workflow.
+The Agent Skills used by GreenByte Studios to plan, implement, verify, and
+publish software changes. The bundle works with Codex, Claude Code, Cursor, and
+other harnesses that support the Agent Skills format.
 
-Created by GreenByte Studios.
+## What It Does
 
-This repository vendors the Agent Skills used by GreenByte Studios for
-Charlie's development workflow. The bundle centers on `charlies-workflow`,
-which supports scoped work in existing products and greenfield MVP delivery,
-plus the companion skills it expects so an AI coding agent can plan, implement,
-verify, document, and prepare draft PRs without relying on Charlie's local
-skill folders.
+`charlies-workflow` is an explicit-only delivery router with two tracks:
 
-## What These Skills Are
+- **Feature Track** for changes to an existing product.
+- **Project Track** for a greenfield product or MVP delivered in vertical
+  milestones.
 
-Agent Skills are folders with a `SKILL.md` file and optional scripts, references, assets, and harness metadata. AI coding agents load them on demand to follow a repeatable workflow instead of making every process decision from scratch.
+The workflow grounds itself in the repository, resolves open product decisions,
+gets approval for a proportional spec, derives a separate implementation plan,
+uses TDD, verifies relevant browser behavior, updates durable documentation,
+reviews the exact candidate commit, and opens a draft PR by default.
 
-This package is the workflow skill set GreenByte Studios uses for feature and
-new-project delivery:
-
-- `charlies-workflow` is the main orchestrator, with Feature and Project Tracks.
-- Its lean action router loads one phase contract at a time, records approval
-  state and spec fingerprints, and refuses to publish unreviewed source changes.
-- Superpowers-derived skills handle brainstorming, specs, implementation plans, TDD, worktrees, and execution when the task calls for them.
-- UI/UX skills support design quality, responsive review, and browser verification.
-- Hallmark provides optional visual-direction study, redesign, and anti-slop
-  auditing for approved high-expression surfaces.
-- Documentation and PR skills help produce final reports and draft PR metadata.
-
-The result is a portable skills bundle you can install into your preferred AI agent harness.
+Meaningful UI work includes a separate three-viewport quality review. Optional
+Hallmark routing supports expressive visual work. Automatic Ponytail Routing
+selects simplicity guidance when the task would benefit from reuse, native
+features, fewer dependencies, or less abstraction.
 
 ## Included Skills
 
-- `charlies-workflow`
-- Companion skills: `emil-design-eng`, `ui-ux-pro-max`, `hallmark`, `doc-it`, `pr-title-and-description`
-- Browser skills: `playwright`, `playwright-interactive`
-- Vendored Superpowers skills: `brainstorming`, `writing-plans`, `test-driven-development`, `using-git-worktrees`, `executing-plans`, `subagent-driven-development`
+- Workflow: `charlies-workflow`
+- Planning and delivery: `brainstorming`, `writing-plans`,
+  `test-driven-development`, `using-git-worktrees`, `executing-plans`,
+  `subagent-driven-development`
+- UI and browser QA: `emil-design-eng`, `ui-ux-pro-max`, `hallmark`,
+  `playwright`, `playwright-interactive`
+- Documentation and GitHub: `doc-it`, `pr-title-and-description`
 
-`charlies-workflow` is explicit-only in Codex through `skills/charlies-workflow/agents/openai.yaml`.
-
-## Install in Your Preferred Harness
-
-Clone the repo:
+## Install
 
 ```bash
 git clone https://github.com/charliemr99/charlies-workflow-skills.git
 cd charlies-workflow-skills
 ```
 
-Dry-run first:
+Choose your harness:
 
 ```bash
-./scripts/install.sh --dry-run
-```
-
-Install globally for a supported harness:
-
-```bash
-# Codex personal skills, matching Charlie's current setup
+# Codex: ${CODEX_HOME:-$HOME/.codex}/skills
 ./scripts/install.sh --harness codex
 
-# Claude Code personal skills
+# Claude Code: $HOME/.claude/skills
 ./scripts/install.sh --harness claude
 
-# Cursor personal skills
+# Cursor: $HOME/.cursor/skills
 ./scripts/install.sh --harness cursor
 ```
 
-Alternative Codex user scope:
+Existing skill folders are preserved. Use `--force` to replace them, or
+`--target-dir /path/to/project/.agents/skills` for a project-scoped install.
 
-```bash
-# Codex official user-scope location
-./scripts/install.sh --harness codex-agents
-```
+## Use
 
-Project-scoped installs are also supported:
-
-```bash
-# Codex repo-scoped skills
-./scripts/install.sh --target-dir /path/to/project/.agents/skills
-
-# Claude Code repo-scoped skills
-./scripts/install.sh --target-dir /path/to/project/.claude/skills
-
-# Cursor repo-scoped skills
-./scripts/install.sh --target-dir /path/to/project/.cursor/skills
-```
-
-By default, existing skill folders are preserved. To replace existing copies:
-
-```bash
-./scripts/install.sh --harness codex --force
-```
-
-Harness notes:
-
-- Codex supports skills as folders with `SKILL.md`; current Codex docs list repo-scoped `.agents/skills` and user-scoped `$HOME/.agents/skills`, while this package defaults `--harness codex` to `${CODEX_HOME:-$HOME/.codex}/skills` to match Charlie's current Codex setup. Use `--target-dir "$HOME/.agents/skills"` if you prefer the official user scope.
-- Claude Code supports personal `~/.claude/skills/` and project `.claude/skills/`.
-- Cursor supports Agent Skills; use `~/.cursor/skills/` for personal installs when enabled in your Cursor setup, or `.cursor/skills/` for project-scoped installs.
-
-Restart the agent or reload its skill registry if a newly installed skill does not appear.
-
-## Usage
-
-Invoke explicitly:
+Invoke the workflow and describe the outcome. You do not need to repeat its
+planning, TDD, browser QA, documentation, or draft-PR instructions.
 
 ```text
-$charlies-workflow Please plan and implement this feature end to end.
+$charlies-workflow Add team invitations to this existing application.
 ```
 
-Feature Track example:
-
-```text
-$charlies-workflow
-Track: feature
-
-Add team invitations to this existing application.
-```
-
-Project Track example:
+Specify a track only when you want to override automatic routing:
 
 ```text
 $charlies-workflow
@@ -130,165 +77,31 @@ Track: project
 Create an MVP for independent consultants to collect client approvals.
 ```
 
-If the track is omitted, the workflow selects Feature Track for scoped changes
-in established repositories and Project Track for a new product or greenfield
-MVP. It asks when both remain plausible after inspecting the environment.
+The workflow asks for spec approval before implementation planning unless you
+explicitly request autonomous execution. Autonomous execution preserves the
+same planning and quality gates.
 
-Typical expectation:
+### Optional Integrations
 
-1. Inspect repository truth, select Feature or Project Track, classify risk,
-   and automatically assess optional Ponytail routing.
-2. Resolve build-changing decisions through dynamic discovery instead of a
-   fixed question count.
-3. Create a proportional spec, obtain explicit approval in the current
-   conversation, and fingerprint the approved version.
-4. Derive a separate implementation plan from that exact spec. Medium and
-   complex work uses `writing-plans`; production edits remain blocked until the
-   plan is ready.
-5. Implement the plan with focused TDD and invalidate approvals when material
-   requirement drift appears.
-6. Run final unit, integration, static, build, and functional browser checks.
-7. Run **Verify Beyond the Obvious** as a separate UI/UX quality gate inside the
-   same browser session. Meaningful UI gets a three-viewport review at small
-   mobile, tablet, and desktop, with screenshots or other useful artifacts.
-8. Run a targeted `doc-it` documentation gate, updating a canonical section or
-   creating a page only when the final behavior needs durable coverage.
-9. Retain the ignored spec, plan, run state, and necessary evidence while
-   reviewing the exact candidate HEAD across functional, code, and relevancy
-   axes. On `iterate`, update those artifacts and review the new candidate.
-10. After `ship`, run decision promotion. If canonical documentation changes,
-    review the new HEAD again. Only then remove temporary workflow artifacts and
-    prove they never entered the diff, staged state, or branch history.
-11. Resolve the expected GitHub account from user and repository instructions,
-    verify it with `gh api user --jq .login`, report decisions and evidence, and
-    prepare a draft PR when GitHub work is in scope.
-
-Project Track first approves an MVP Contract and an Architecture and Delivery
-Roadmap. It then delivers vertical milestones through Feature Track instead of
-turning the whole MVP into one giant spec, plan, or PR.
-
-Temporary specs and implementation plans are execution aids. The workflow defaults to ignored `output/workflow/<feature-or-run-id>/` artifacts for medium and complex work and keeps them out of the final PR. They stay available through review and iteration, then are deleted after `ship` once any genuinely durable decisions have been extracted into concise canonical documentation.
-
-### Optional Hallmark Routing
-
-Hallmark is installed with the bundle but is not a default UI dependency.
-Charlie's Workflow selects it only for customer-facing greenfield pages,
-brand/marketing/editorial work, explicit high-expression redesigns, or
-user-approved design-reference study. Operational dashboards, admin tools,
-tables, forms, and localized UI fixes continue to use the repository design
-system, Emil Design, and UI/UX Pro Max without Hallmark unless the user
-explicitly requests it.
-
-Hallmark audits are advisory. Browser behavior, responsive quality,
-accessibility, and interaction still require the normal Playwright and UI/UX
-verification gates.
-
-### Automatic Ponytail Routing
-
-Charlie's Workflow automatically evaluates whether Ponytail can materially
-reduce implementation or maintenance cost. It records `off`, `lite`, `full`,
-or `unavailable` with an evidence-backed reason; `ultra` always requires an
-explicit user request. Typical signals include new dependencies, speculative
-abstractions, duplicated helpers, native-platform alternatives, and bugs with a
-shared root-cause path.
-
-When relevant, `ponytail-review` contributes a focused over-engineering pass to
-Charlie's existing relevancy review. It does not replace correctness, security,
-TDD, browser QA, or the final report. `ponytail-audit` remains repo-wide and is
-only routed automatically when the requested task is itself a whole-repository
-complexity audit.
-
-The Ponytail plugin is an optional integration and is not vendored by this
-bundle. Without it, Charlie records `unavailable` and continues with the normal
-workflow. Install it from
-[`DietrichGebert/ponytail`](https://github.com/DietrichGebert/ponytail) when you
-want automatic simplicity support. For Codex:
-
-```bash
-codex plugin marketplace add DietrichGebert/ponytail
-codex plugin add ponytail@ponytail
-```
-
-Charlie accepts both local names such as `ponytail-review` and plugin-qualified
-names such as `ponytail:ponytail-review`, without pinning a machine-local plugin
-path. See the upstream repository for Claude Code and Cursor installation
-options. On a rule-only adapter, Ponytail may be always-on instead of
-selectively invoked; Charlie's requirements, safety, and review gates still
-take precedence.
-
-## Behavioral Smoke Evaluations
-
-The normal validator checks package structure and workflow invariants without
-calling a model. An additional opt-in smoke suite probes phase behavior against
-a temporary fixture repository. It checks explicit phase outcomes, required
-temporary spec/plan artifacts, and every repository mutation, not only common
-source directories. Only ignored `output/workflow/` execution artifacts are
-allowed in stop-before-code cases.
-
-These are behavioral smoke signals, not proof of model behavior. Run repeated
-trials and compare the same prompt without the installed skill before treating
-a change as an improvement.
-
-Validate the case catalog without model usage:
-
-```bash
-python3 scripts/eval-workflow.py --validate-cases
-python3 scripts/eval-workflow.py --list
-```
-
-Run the suite with a locally authenticated harness:
-
-```bash
-python3 scripts/eval-workflow.py --harness codex --runs 3 --report /tmp/charlie-codex-eval.json
-python3 scripts/eval-workflow.py --harness claude --runs 3 --report /tmp/charlie-claude-eval.json
-python3 scripts/eval-workflow.py --harness codex --runs 3 --compare-control --report /tmp/charlie-control-eval.json
-```
-
-Model evaluations are intentionally excluded from CI because they are metered,
-non-deterministic, and require local harness authentication. For another agent,
-use `--harness custom --command-template` with `{workspace}`, `{prompt}`, or
-`{prompt_file}`.
+- **Hallmark** is bundled and selected only for appropriate visual work.
+- **Ponytail** is not bundled. Install the
+  [Ponytail plugin](https://github.com/DietrichGebert/ponytail) to enable
+  automatic `lite` or `full` simplicity guidance and diff review. `ultra`
+  remains explicit, and repo-wide audits do not expand normal feature scope.
 
 ## Validate
 
-The validator uses a commit-pinned copy of Codex's official skill validator so
-local runs and CI execute the same checks. It expects PyYAML to be available to
-the Python interpreter running the validator.
-
 ```bash
-./scripts/validate.sh
+uv run --with pyyaml ./scripts/validate.sh
+./scripts/install.sh --dry-run
 ```
 
-If PyYAML is missing:
-
-```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install PyYAML
-./scripts/validate.sh --python python
-```
-
-You can validate a temporary install too:
-
-```bash
-tmp="$(mktemp -d)"
-CODEX_HOME="$tmp/codex" ./scripts/install.sh --harness codex
-./scripts/validate.sh --skills-dir "$tmp/codex/skills"
-```
-
-## Update Process
-
-1. Refresh source skills locally.
-2. Copy updated skill folders into `skills/`.
-3. Update `manifest.json` and `THIRD_PARTY_NOTICES.md` when upstream versions, sources, or licenses change.
-4. For Hallmark, review upstream changes and update the pinned commit before
-   replacing the vendored folder.
-5. Run `./scripts/validate.sh`.
-6. Run `./scripts/install.sh --dry-run` and a temporary install smoke test.
-
-Pull requests run those package, contract, evaluation-catalog, and installer
-checks automatically through `.github/workflows/validate.yml`.
+Behavioral Smoke Evaluations are optional and never call a model during normal
+validation. Run `python3 scripts/eval-workflow.py --help` for local harness
+options, including `--compare-control`.
 
 ## License
 
-Repo-owned packaging files are MIT licensed. Vendored skills may include third-party material under their own licenses; see `THIRD_PARTY_NOTICES.md` and any `LICENSE` or `NOTICE` files inside the vendored skill folders.
+GreenByte Studios packaging files are MIT licensed. Vendored skills retain
+their original licenses and notices in
+[`THIRD_PARTY_NOTICES.md`](THIRD_PARTY_NOTICES.md).
