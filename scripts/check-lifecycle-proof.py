@@ -74,6 +74,21 @@ def require_artifact_path(value: Any) -> str:
     return value
 
 
+def require_workflow_path(value: Any, label: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise AssertionError(f"{label} must be a non-empty string")
+    path = Path(value)
+    if (
+        path.is_absolute()
+        or ".." in path.parts
+        or "<" in value
+        or ">" in value
+        or not value.startswith("output/")
+    ):
+        raise AssertionError(f"{label} must be a safe relative output path")
+    return value
+
+
 def validate_lifecycle(document: dict[str, Any]) -> None:
     if document.get("schema_version") != 1:
         raise AssertionError("lifecycle schema_version must be 1")
@@ -126,7 +141,7 @@ def validate_lifecycle(document: dict[str, Any]) -> None:
             require_nonempty_string(item, key, f"decision ledger {key}")
 
     spec = require_object(document, "spec")
-    require_nonempty_string(spec, "path", "spec path")
+    spec_path = require_workflow_path(spec.get("path"), "spec path")
     spec_digest = require_sha256(spec.get("sha256"), "spec sha256")
     approval = require_object(spec, "approval")
     if (
@@ -140,7 +155,9 @@ def validate_lifecycle(document: dict[str, Any]) -> None:
         )
 
     plan = require_object(document, "plan")
-    require_nonempty_string(plan, "path", "plan path")
+    plan_path = require_workflow_path(plan.get("path"), "plan path")
+    if plan_path == spec_path:
+        raise AssertionError("spec and plan paths must be distinct")
     require_sha256(plan.get("sha256"), "plan sha256")
     if plan.get("source_spec_sha256") != spec_digest:
         raise AssertionError("plan must retain the approved spec digest")
@@ -240,8 +257,12 @@ def validate_lifecycle(document: dict[str, Any]) -> None:
     if verification.get("status") != "passed":
         raise AssertionError("candidate verification must pass")
     commands = verification.get("commands")
-    if not isinstance(commands, list) or not commands:
-        raise AssertionError("candidate verification needs concrete commands")
+    if not isinstance(commands, list) or not commands or not all(
+        isinstance(command, str) and command.strip() for command in commands
+    ):
+        raise AssertionError(
+            "candidate verification needs concrete command strings"
+        )
 
     documentation = require_object(document, "documentation")
     if (

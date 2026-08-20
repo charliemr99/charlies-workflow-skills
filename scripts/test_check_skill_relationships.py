@@ -203,6 +203,24 @@ class SkillRelationshipTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "explicit activation.*openai.yaml"):
             relationships.validate_activation_policies(self.fixture.root)
 
+    def test_explicit_entry_cannot_allow_implicit_activation(self) -> None:
+        relationships = load_relationships()
+        self.fixture.add_skill("alpha", implicit=True)
+        self.fixture.entries[0]["activation"]["role"] = "explicit-entry"
+        self.fixture.write_manifest()
+
+        with self.assertRaisesRegex(AssertionError, "explicit-entry.*implicit false"):
+            relationships.validate_manifest_graph(self.fixture.root)
+
+    def test_routed_helper_cannot_disable_implicit_activation(self) -> None:
+        relationships = load_relationships()
+        self.fixture.add_skill("alpha", implicit=False, codex_explicit=True)
+        self.fixture.entries[0]["activation"]["role"] = "routed-helper"
+        self.fixture.write_manifest()
+
+        with self.assertRaisesRegex(AssertionError, "routed-helper.*implicit true"):
+            relationships.validate_manifest_graph(self.fixture.root)
+
     def test_closure_is_stable_and_dependency_first(self) -> None:
         relationships = load_relationships()
         self.fixture.add_skill("alpha", bundled=["charlie", "beta"])
@@ -255,6 +273,19 @@ class SkillRelationshipTests(unittest.TestCase):
         self.fixture.write_manifest()
 
         with self.assertRaisesRegex(AssertionError, "upstream source.*repository or package"):
+            relationships.validate_manifest_graph(self.fixture.root)
+
+    def test_upstream_repository_requires_an_immutable_commit(self) -> None:
+        relationships = load_relationships()
+        self.fixture.add_skill("alpha")
+        self.fixture.entries[0]["ownership"] = "third-party"
+        self.fixture.entries[0]["source"] = {
+            "type": "upstream-derived",
+            "repository": "example/upstream",
+        }
+        self.fixture.write_manifest()
+
+        with self.assertRaisesRegex(AssertionError, "immutable commit"):
             relationships.validate_manifest_graph(self.fixture.root)
 
 

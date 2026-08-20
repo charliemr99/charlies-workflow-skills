@@ -72,6 +72,18 @@ class LifecycleProofTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "plan.*spec digest"):
             self.checker.validate_lifecycle(document)
 
+    def test_spec_and_plan_require_distinct_safe_paths(self) -> None:
+        document = self.mutated()
+        document["plan"]["path"] = document["spec"]["path"]
+
+        with self.assertRaisesRegex(AssertionError, "spec and plan paths"):
+            self.checker.validate_lifecycle(document)
+
+        document = self.mutated()
+        document["spec"]["path"] = "../spec.md"
+        with self.assertRaisesRegex(AssertionError, "spec path.*safe relative"):
+            self.checker.validate_lifecycle(document)
+
     def test_green_requires_observed_red(self) -> None:
         document = self.mutated()
         document["tdd"]["cycles"][0]["red"]["observed"] = False
@@ -117,6 +129,17 @@ class LifecycleProofTests(unittest.TestCase):
 
         with self.assertRaisesRegex(AssertionError, "candidate HEAD"):
             self.checker.validate_lifecycle(document)
+
+    def test_verification_commands_must_be_concrete_strings(self) -> None:
+        for commands in ([None], [""], [1]):
+            with self.subTest(commands=commands):
+                document = self.mutated()
+                document["verification"]["commands"] = commands
+
+                with self.assertRaisesRegex(
+                    AssertionError, "concrete command strings"
+                ):
+                    self.checker.validate_lifecycle(document)
 
     def test_cleanup_must_follow_ship_and_remove_temporary_artifacts(self) -> None:
         document = self.mutated()

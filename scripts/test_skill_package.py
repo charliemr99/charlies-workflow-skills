@@ -266,6 +266,32 @@ class SkillPackageTests(unittest.TestCase):
         )
         self.assertFalse((target / RECEIPT).exists())
 
+    def test_force_rejects_symlinked_backup_root(self) -> None:
+        target = self.root / "unsafe-backups"
+        existing = target / "brainstorming"
+        existing.mkdir(parents=True)
+        marker = existing / "user.txt"
+        marker.write_text("original\n", encoding="utf-8")
+        state = target / ".charlies-workflow-skills"
+        state.mkdir()
+        outside = self.root / "outside-backups"
+        outside.mkdir()
+        (state / "backups").symlink_to(outside, target_is_directory=True)
+
+        result = self.run_cli(
+            "install",
+            "--target-dir",
+            str(target),
+            "--skill",
+            "brainstorming",
+            "--force",
+        )
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("package backups may not be a symlink", result.stderr)
+        self.assertEqual(marker.read_text(encoding="utf-8"), "original\n")
+        self.assertEqual(list(outside.iterdir()), [])
+
     def test_force_restores_preexisting_external_symlink(self) -> None:
         target = self.root / "replace-symlink"
         target.mkdir()

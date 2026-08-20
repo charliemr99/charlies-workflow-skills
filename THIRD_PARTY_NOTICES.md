@@ -184,7 +184,11 @@ The `playwright` skill includes material derived from the Microsoft `playwright-
 Source:
 
 - Repository: `microsoft/playwright-cli`
+- Reviewed commit: `34bf2ada4d4a28723bd65ba4e56ba724fdaaa959`
 - Path: `skills/playwright-cli/SKILL.md`
+
+This was the latest upstream revision for that path when the skills were first
+vendored into this package on 2026-07-09.
 
 Copyright (c) Microsoft Corporation.
 

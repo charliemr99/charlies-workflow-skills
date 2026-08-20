@@ -132,6 +132,12 @@ def _validate_entry(root: Path, name: str, entry: dict[str, Any]) -> None:
         raise AssertionError(f"{name}: invalid activation role")
     if not isinstance(activation.get("implicit"), bool):
         raise AssertionError(f"{name}: activation.implicit must be a boolean")
+    role = activation["role"]
+    implicit = activation["implicit"]
+    if role == "explicit-entry" and implicit is not False:
+        raise AssertionError(f"{name}: explicit-entry requires implicit false")
+    if role == "routed-helper" and implicit is not True:
+        raise AssertionError(f"{name}: routed-helper requires implicit true")
 
     dependencies = entry["dependencies"]
     if not isinstance(dependencies, dict):
@@ -162,6 +168,18 @@ def _validate_entry(root: Path, name: str, entry: dict[str, Any]) -> None:
         raise AssertionError(
             f"{name}: upstream source requires a repository or package"
         )
+    if isinstance(source.get("repository"), str):
+        commit = source.get("commit")
+        if not isinstance(commit, str) or not re.fullmatch(r"[0-9a-f]{40}", commit):
+            raise AssertionError(
+                f"{name}: upstream repository requires an immutable commit"
+            )
+    if isinstance(source.get("package"), str):
+        version = source.get("version")
+        if not isinstance(version, str) or not version.strip():
+            raise AssertionError(
+                f"{name}: upstream package requires an immutable version"
+            )
     source_path = source.get("path")
     if isinstance(source_path, str) and Path(source_path).is_absolute():
         raise AssertionError(f"{name}: machine-local source path is forbidden")

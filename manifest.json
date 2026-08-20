@@ -149,8 +149,13 @@
       "activation": {"role": "routed-helper", "implicit": true},
       "dependencies": {"bundled": [], "external_optional": ["playwright-cli"]},
       "required_resources": ["LICENSE.txt", "NOTICE.txt"],
-      "source": {"type": "upstream-derived", "repository": "microsoft/playwright-cli"},
-      "notes": "Apache-2.0 license and notice are preserved in the skill folder."
+      "source": {
+        "type": "upstream-derived",
+        "repository": "microsoft/playwright-cli",
+        "commit": "34bf2ada4d4a28723bd65ba4e56ba724fdaaa959",
+        "path": "skills/playwright-cli/SKILL.md"
+      },
+      "notes": "Adapted browser skill pinned to the upstream revision current when this package first vendored it; Apache-2.0 materials are preserved."
     },
     {
       "name": "playwright-interactive",
@@ -161,8 +166,13 @@
       "activation": {"role": "routed-helper", "implicit": true},
       "dependencies": {"bundled": [], "external_optional": ["playwright", "js_repl"]},
       "required_resources": ["LICENSE.txt", "NOTICE.txt"],
-      "source": {"type": "upstream-derived", "repository": "microsoft/playwright-cli"},
-      "notes": "Apache-2.0 license and notice are preserved in the skill folder."
+      "source": {
+        "type": "upstream-derived",
+        "repository": "microsoft/playwright-cli",
+        "commit": "34bf2ada4d4a28723bd65ba4e56ba724fdaaa959",
+        "path": "skills/playwright-cli/SKILL.md"
+      },
+      "notes": "Interactive companion derived from the pinned Playwright skill and local browser tooling; Apache-2.0 materials are preserved."
     },
     {
       "name": "brainstorming",

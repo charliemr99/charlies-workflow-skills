@@ -184,6 +184,21 @@ def _entry_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
     }
 
 
+def _safe_state_roots(target: Path) -> tuple[Path, Path]:
+    state_root = target / PACKAGE_STATE
+    if state_root.is_symlink():
+        raise PackageError(f"{state_root}: package state may not be a symlink")
+    if path_exists(state_root) and not state_root.is_dir():
+        raise PackageError(f"{state_root}: package state must be a directory")
+
+    backups_root = state_root / "backups"
+    if backups_root.is_symlink():
+        raise PackageError(f"{backups_root}: package backups may not be a symlink")
+    if path_exists(backups_root) and not backups_root.is_dir():
+        raise PackageError(f"{backups_root}: package backups must be a directory")
+    return state_root, backups_root
+
+
 def _safe_backup_path(target: Path, backup_value: str) -> Path:
     relative = Path(backup_value)
     if relative.is_absolute() or ".." in relative.parts:
@@ -191,7 +206,8 @@ def _safe_backup_path(target: Path, backup_value: str) -> Path:
             f"receipt backup escapes package state: {backup_value}"
         )
     backup = target / relative
-    backup_root = (target / PACKAGE_STATE / "backups").resolve()
+    _state_root, backups_root = _safe_state_roots(target)
+    backup_root = backups_root.resolve()
     try:
         backup.parent.resolve().relative_to(backup_root)
     except ValueError as error:
@@ -261,11 +277,8 @@ def install(args: argparse.Namespace) -> int:
     manifest = load_manifest(ROOT)
     requested, resolved = selected_skills(manifest, args.skill)
     entries = _entry_map(manifest)
-    state_root = target / PACKAGE_STATE
+    state_root, backups_root = _safe_state_roots(target)
     receipt_path = state_root / RECEIPT_NAME
-
-    if state_root.is_symlink():
-        raise PackageError(f"{state_root}: package state may not be a symlink")
 
     if receipt_path.is_file():
         raise PackageError(
@@ -301,7 +314,7 @@ def install(args: argparse.Namespace) -> int:
         + "-"
         + uuid.uuid4().hex[:8]
     )
-    backup_root = state_root / "backups" / run_id
+    backup_root = backups_root / run_id
     records: list[dict[str, Any]] = []
     staging_paths: list[Path] = []
     installed_destinations: list[Path] = []
@@ -377,9 +390,7 @@ def install(args: argparse.Namespace) -> int:
 
 
 def _load_receipt(target: Path) -> tuple[Path, dict[str, Any]]:
-    state_root = target / PACKAGE_STATE
-    if state_root.is_symlink():
-        raise PackageError(f"{state_root}: package state may not be a symlink")
+    state_root, _backups_root = _safe_state_roots(target)
     receipt_path = state_root / RECEIPT_NAME
     if not receipt_path.is_file():
         raise PackageError(f"{target}: no active package receipt")
