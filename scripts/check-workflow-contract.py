@@ -8,6 +8,8 @@ from pathlib import Path
 
 import yaml
 
+from skill_relationships import validate_all as validate_skill_relationships
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CHARLIE = ROOT / "skills" / "charlies-workflow"
@@ -60,6 +62,8 @@ def require_explicit_only(path: Path) -> None:
 
 
 def main() -> None:
+    validate_skill_relationships(ROOT)
+
     charlie_lines = (CHARLIE / "SKILL.md").read_text(encoding="utf-8").splitlines()
     if len(charlie_lines) > 220:
         raise AssertionError("Charlie's SKILL.md must stay at or below 220 lines")
@@ -316,7 +320,12 @@ def main() -> None:
     )
     if hallmark is None:
         raise AssertionError("manifest.json does not list Hallmark")
-    if hallmark.get("upstream_commit") != "aeb42fb354ff4efa36ab475773a082315a3af2ce":
+    hallmark_source = hallmark.get("source")
+    if (
+        not isinstance(hallmark_source, dict)
+        or hallmark_source.get("commit")
+        != "aeb42fb354ff4efa36ab475773a082315a3af2ce"
+    ):
         raise AssertionError("manifest.json does not pin the reviewed Hallmark commit")
 
     require_text(
@@ -334,7 +343,14 @@ def main() -> None:
     )
     require_text(
         ROOT / "THIRD_PARTY_NOTICES.md",
-        ["Hallmark", "Nutlope/hallmark"],
+        [
+            "Hallmark",
+            "Nutlope/hallmark",
+            "Emil Kowalski",
+            "Next Level Builder",
+            "Taylor Dolezal",
+            "Superpowers",
+        ],
     )
 
     eval_cases = json.loads(
@@ -397,6 +413,9 @@ def main() -> None:
         ROOT / "scripts" / "test_check_workflow_contract.py",
         ROOT / "scripts" / "eval-workflow.py",
         ROOT / "scripts" / "test_eval_workflow.py",
+        ROOT / "scripts" / "skill_relationships.py",
+        ROOT / "scripts" / "check-skill-relationships.py",
+        ROOT / "scripts" / "test_check_skill_relationships.py",
         ROOT / "scripts" / "install.sh",
         ROOT / "scripts" / "validate.sh",
         ROOT / ".github" / "workflows" / "validate.yml",

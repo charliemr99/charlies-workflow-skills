@@ -32,6 +32,9 @@ Packaging modification:
   validator.
 - Added Codex `agents/openai.yaml` metadata so the optional skill remains
   explicit-only unless Charlie's Workflow selects it.
+- Replaced links that escaped into omitted upstream `site/` and `docs/`
+  content with URLs pinned to the reviewed commit. Those optional examples
+  require network access.
 - Removed one trailing blank line so the vendored tree passes `git diff
   --check`.
 
@@ -59,6 +62,61 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Emil Kowalski Design Engineering Skill
+
+Vendored skill: `emil-design-eng`
+
+Source:
+
+- Repository: `emilkowalski/skills`
+- Reviewed commit: `ecf66bbd1fb33c25332b6b0e454d08049978284c`
+
+The skill body is pinned to the reviewed upstream Git blob. Its MIT license is
+preserved in `skills/emil-design-eng/LICENSE.txt`.
+
+Copyright (c) 2026 Emil Kowalski.
+
+## UI/UX Pro Max
+
+Vendored skill: `ui-ux-pro-max`
+
+Source:
+
+- Repository: `nextlevelbuilder/ui-ux-pro-max-skill`
+- Reviewed commit: `87c6c3e0e1a8891d79795d3e3061f10b650de51b`
+
+Packaging modifications:
+
+- Replaced upstream installation symlinks with the real `data/` and
+  `scripts/` trees from the same reviewed commit.
+- Normalized command examples to resolve from the installed skill root.
+- Added strict Agent Skills license and compatibility metadata.
+
+The MIT license is preserved in `skills/ui-ux-pro-max/LICENSE.txt`.
+
+Copyright (c) 2024 Next Level Builder.
+
+## Doc It
+
+Vendored skill: `doc-it`
+
+Source:
+
+- Repository: `onlydole/overdue`
+- Path: `.claude/skills/doc-it/SKILL.md`
+- Reviewed commit: `eb1f11807296ae09826fbfc4ecac84bda97982d9`
+
+Packaging modifications:
+
+- Removed Claude-only invocation metadata from the strict Agent Skills source.
+- Converted `allowed-tools` from a YAML list to the Agent Skills
+  space-delimited string form.
+- Added license and compatibility metadata.
+
+The MIT license is preserved in `skills/doc-it/LICENSE.txt`.
+
+Copyright (c) 2026 Taylor Dolezal.
+
 ## Superpowers
 
 Vendored skills:
@@ -67,10 +125,18 @@ Vendored skills:
 - `writing-plans`
 - `test-driven-development`
 - `using-git-worktrees`
-- `executing-plans`
 - `subagent-driven-development`
 
 Source package: Superpowers `6.1.1`
+
+Packaging modifications:
+
+- Adapted brainstorming, writing-plans, and subagent-driven-development as
+  phase techniques under Charlie's parent lifecycle contract.
+- Removed helper-owned artifact paths, approval handoffs, final review, cleanup,
+  and publication instructions that competed with the parent router.
+- Omitted `executing-plans` because the parent already owns inline execution
+  and the helper would require additional unbundled Superpowers siblings.
 
 License:
 

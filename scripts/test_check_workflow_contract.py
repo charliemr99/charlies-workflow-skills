@@ -4,12 +4,14 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
 
 
 MODULE_PATH = Path(__file__).with_name("check-workflow-contract.py")
+ROOT = MODULE_PATH.parents[1]
 SPEC = importlib.util.spec_from_file_location("check_workflow_contract", MODULE_PATH)
 if SPEC is None or SPEC.loader is None:
     raise RuntimeError(f"Unable to load {MODULE_PATH}")
@@ -95,12 +97,67 @@ class AuthoredFileCoverageTests(unittest.TestCase):
             'ROOT / "scripts" / "test_check_workflow_contract.py"',
             'ROOT / "scripts" / "eval-workflow.py"',
             'ROOT / "scripts" / "test_eval_workflow.py"',
+            'ROOT / "scripts" / "skill_relationships.py"',
+            'ROOT / "scripts" / "check-skill-relationships.py"',
+            'ROOT / "scripts" / "test_check_skill_relationships.py"',
             'ROOT / "scripts" / "install.sh"',
             'ROOT / "scripts" / "validate.sh"',
             'ROOT / ".github" / "workflows" / "validate.yml"',
             'ROOT / "scripts" / "vendor" / "openai-skill-creator" / "NOTICE.md"',
         ]:
             self.assertIn(path_expression, source)
+
+
+class PackageCoherenceTests(unittest.TestCase):
+    def test_charlie_routes_helpers_through_a_portable_loading_contract(self) -> None:
+        helper_loading = (
+            ROOT
+            / "skills"
+            / "charlies-workflow"
+            / "references"
+            / "helper-loading.md"
+        )
+        self.assertTrue(helper_loading.is_file())
+        self.assertIn(
+            "bundled sibling",
+            helper_loading.read_text(encoding="utf-8"),
+        )
+
+    def test_public_bundle_omits_competing_executing_plans_helper(self) -> None:
+        self.assertFalse((ROOT / "skills" / "executing-plans").exists())
+
+    def test_adapted_helpers_do_not_bypass_charlie_artifact_ownership(self) -> None:
+        brainstorming = (
+            ROOT / "skills" / "brainstorming" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        writing_plans = (
+            ROOT / "skills" / "writing-plans" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+        subagents = (
+            ROOT / "skills" / "subagent-driven-development" / "SKILL.md"
+        ).read_text(encoding="utf-8")
+
+        self.assertNotIn("docs/superpowers/specs", brainstorming)
+        self.assertNotIn("Spec written and committed", brainstorming)
+        self.assertNotIn("docs/superpowers/plans", writing_plans)
+        self.assertNotIn("superpowers:executing-plans", writing_plans)
+        self.assertNotIn("requesting-code-review", subagents)
+        self.assertNotIn("finishing-a-development-branch", subagents)
+
+    def test_manifest_declares_relationship_and_activation_metadata(self) -> None:
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        self.assertEqual(manifest.get("schema_version"), 1)
+        self.assertRegex(manifest.get("package_version", ""), r"^\d+\.\d+\.\d+$")
+        for skill in manifest["skills"]:
+            with self.subTest(skill=skill.get("name")):
+                self.assertIn("license", skill)
+                self.assertIn("adapted", skill)
+                self.assertIn("activation", skill)
+                self.assertIsInstance(skill["activation"].get("implicit"), bool)
+                self.assertIn("dependencies", skill)
+                self.assertIn("bundled", skill["dependencies"])
+                self.assertIn("external_optional", skill["dependencies"])
+                self.assertIn("source", skill)
 
 
 if __name__ == "__main__":

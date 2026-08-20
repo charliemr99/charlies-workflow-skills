@@ -1,6 +1,8 @@
 ---
 name: charlies-workflow
 description: Use when the user explicitly invokes $charlies-workflow for a greenfield project, MVP, feature, bug fix, refactor, UI change, or PR-ready implementation workflow
+license: MIT
+compatibility: Codex-first; portable to Agent Skills harnesses with harness-specific invocation and tool semantics.
 ---
 
 # Charlies Workflow
@@ -49,6 +51,11 @@ design critique, optional Ponytail skills own simplicity analysis, `doc-it`
 owns documentation quality, and PR skills own PR text. A helper may not change
 the selected track, skip a gate, commit temporary artifacts, or broaden its
 phase.
+
+Resolve selected helpers through
+[helper-loading.md](references/helper-loading.md). A helper's activation policy
+does not change Charlie's explicit-only entrypoint or transfer lifecycle
+ownership.
 
 `No blocking questions` is a discovery conclusion backed by repository facts
 and explicit assumptions, never a shortcut around the discovery action.

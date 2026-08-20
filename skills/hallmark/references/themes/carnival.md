@@ -2,7 +2,7 @@
 
 Loud-maximalist editorial. **Duo-tone accent system across six named palette drops** (each its own mood), chunky variable display, decorative ornaments, hard-offset shadows, tinted paper. The loud sibling to Riso / Manifesto / Brutal — but **decorative, not raw**.
 
-Loaded eagerly by SKILL.md Step 3 whenever the catalog pick is `carnival`. The default palette ("Cold Snap") and font stack live in [`site/css/tokens.css`](../../../../site/css/tokens.css) under `[data-theme="carnival"]`; this file carries the **palette drops** (six variants) plus the rules that tokens cannot encode.
+Loaded eagerly by SKILL.md Step 3 whenever the catalog pick is `carnival`. The default palette ("Cold Snap") and font stack live in [`site/css/tokens.css`](https://github.com/Nutlope/hallmark/blob/aeb42fb354ff4efa36ab475773a082315a3af2ce/site/css/tokens.css) under `[data-theme="carnival"]`; this file carries the **palette drops** (six variants) plus the rules that tokens cannot encode.
 
 ## Axes (diversification)
 

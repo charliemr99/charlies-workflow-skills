@@ -4,7 +4,9 @@ description: >
   Generate, update, and audit project documentation from source code. Scans the
   repo for missing docs, stale references, and gaps in existing files. Produces
   new pages, patches existing ones, and recommends docs the project should have.
-allowed-tools: [Read, Grep, Glob, Bash, Write]
+license: MIT
+compatibility: Adapted from Claude Code metadata to strict Agent Skills frontmatter.
+allowed-tools: Read Grep Glob Bash Write
 ---
 
 # Generate and Maintain Project Documentation
