@@ -1,0 +1,141 @@
+{
+  "schema_version": 1,
+  "evidence_boundary": "deterministic-contract-fixture",
+  "claims_real_harness_execution": false,
+  "description": "Synthetic contract evidence. It proves lifecycle relationships and does not claim that Codex, Claude Code, Cursor, GitHub, or a browser executed this request.",
+  "transitions": [
+    "grounding",
+    "discovery",
+    "awaiting-spec-approval",
+    "planning",
+    "implementing",
+    "verifying",
+    "documenting",
+    "reviewing",
+    "publishable",
+    "published"
+  ],
+  "request": {
+    "id": "fixture-responsive-navigation",
+    "track": "Feature Track",
+    "mode": "autonomous",
+    "outcome": "Add a keyboard-accessible responsive navigation drawer."
+  },
+  "spec": {
+    "path": "output/workflow/fixture-responsive-navigation/spec.md",
+    "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "status": "approved",
+    "approval": {
+      "explicit": true,
+      "evidence": "Fixture user explicitly approved the final design contract."
+    }
+  },
+  "plan": {
+    "path": "output/workflow/fixture-responsive-navigation/plan.md",
+    "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+    "source_spec_sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+    "status": "ready",
+    "acceptance_criteria_mapped": true,
+    "browser_scenarios_planned": true
+  },
+  "tdd": {
+    "cycles": [
+      {
+        "id": "drawer-opens-and-restores-focus",
+        "test": "tests/navigation-drawer.test.tsx",
+        "red": {
+          "observed": true,
+          "command": "pnpm test navigation-drawer.test.tsx",
+          "result": "failed-as-expected"
+        },
+        "green": {
+          "observed": true,
+          "command": "pnpm test navigation-drawer.test.tsx",
+          "result": "passed"
+        }
+      }
+    ]
+  },
+  "browser": {
+    "applies": true,
+    "functional_evidence": true,
+    "scenarios": [
+      {
+        "id": "responsive-navigation-journey",
+        "status": "passed",
+        "steps": [
+          "Open the navigation as an authenticated user.",
+          "Choose a route with the keyboard.",
+          "Confirm the selected route and restored focus."
+        ],
+        "viewports": [
+          {
+            "name": "small-mobile",
+            "width": 390,
+            "height": 844,
+            "artifact": "output/workflow/evidence/navigation-small-mobile.png"
+          },
+          {
+            "name": "tablet",
+            "width": 768,
+            "height": 1024,
+            "artifact": "output/workflow/evidence/navigation-tablet.png"
+          },
+          {
+            "name": "desktop",
+            "width": 1440,
+            "height": 900,
+            "artifact": "output/workflow/evidence/navigation-desktop.png"
+          }
+        ],
+        "artifacts": [
+          "output/workflow/evidence/navigation-trace.zip",
+          "output/workflow/evidence/navigation-browser.log"
+        ]
+      }
+    ]
+  },
+  "candidate": {
+    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "verification": {
+    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "status": "passed",
+    "commands": [
+      "pnpm test navigation-drawer.test.tsx",
+      "pnpm lint",
+      "pnpm build"
+    ]
+  },
+  "documentation": {
+    "status": "complete",
+    "decisions_promoted": true,
+    "remaining_gaps": []
+  },
+  "review": {
+    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "axes": {
+      "functional": "approved",
+      "code": "approved",
+      "relevancy": "approved"
+    },
+    "verdict": "ship"
+  },
+  "cleanup": {
+    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "after_ship": true,
+    "temporary_artifacts_absent": true,
+    "surfaces": {
+      "spec": false,
+      "plan": false,
+      "run_state": false,
+      "review_packages": false
+    }
+  },
+  "publication": {
+    "head": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "draft": true,
+    "url": "https://github.com/example/repository/pull/123"
+  },
+  "harness_runs": []
+}

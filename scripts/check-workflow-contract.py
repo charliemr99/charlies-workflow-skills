@@ -360,6 +360,8 @@ def main() -> None:
     )
     if eval_cases.get("schema_version") != 2:
         raise AssertionError("Behavioral eval schema_version must be 2")
+    if eval_cases.get("evidence_boundary") != "model-driven-smoke-evaluation":
+        raise AssertionError("Behavioral eval evidence boundary is missing")
     cases = eval_cases.get("cases")
     if not isinstance(cases, list) or len(cases) < 5:
         raise AssertionError("At least five behavioral eval cases are required")
@@ -395,6 +397,25 @@ def main() -> None:
             "forbid_workspace_changes",
             "unexpected_workspace_changes",
             "compare-control",
+            "model-driven-smoke-evaluation",
+        ],
+    )
+    lifecycle = json.loads(
+        (ROOT / "evals" / "deterministic-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if lifecycle.get("evidence_boundary") != "deterministic-contract-fixture":
+        raise AssertionError("Deterministic lifecycle evidence boundary is missing")
+    require_text(
+        ROOT / "scripts" / "check-lifecycle-proof.py",
+        [
+            "deterministic-contract-fixture",
+            "small-mobile",
+            "tablet",
+            "desktop",
+            "candidate HEAD",
+            "draft publication",
         ],
     )
 
@@ -409,8 +430,11 @@ def main() -> None:
         CHARLIE / "agents" / "openai.yaml",
         ROOT / "README.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
+        ROOT / "evals" / "deterministic-lifecycle.json",
         ROOT / "scripts" / "check-workflow-contract.py",
         ROOT / "scripts" / "test_check_workflow_contract.py",
+        ROOT / "scripts" / "check-lifecycle-proof.py",
+        ROOT / "scripts" / "test_check_lifecycle_proof.py",
         ROOT / "scripts" / "eval-workflow.py",
         ROOT / "scripts" / "test_eval_workflow.py",
         ROOT / "scripts" / "skill_relationships.py",

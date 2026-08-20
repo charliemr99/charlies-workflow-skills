@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import importlib.util
+import json
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +19,27 @@ SPEC.loader.exec_module(EVAL)
 
 
 class EvalWorkflowTests(unittest.TestCase):
+    def test_catalog_and_reports_use_the_model_smoke_boundary(self) -> None:
+        catalog = json.loads(EVAL.CASES_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(
+            catalog.get("evidence_boundary"),
+            "model-driven-smoke-evaluation",
+        )
+        report = EVAL.build_report(
+            harness="codex",
+            comparison_mode=False,
+            results=[
+                {
+                    "variant": "skill",
+                    "passed": True,
+                }
+            ],
+        )
+        self.assertEqual(
+            report["evidence_boundary"],
+            "model-driven-smoke-evaluation",
+        )
+
     def test_catalog_contains_each_required_gate(self) -> None:
         case_ids = {case["id"] for case in EVAL.load_cases()}
         self.assertEqual(

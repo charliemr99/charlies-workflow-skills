@@ -25,12 +25,17 @@ PHASE_PATTERNS = {
     "awaiting-spec-approval": r"(?i)(spec|brief).{0,120}(approval|approve|aprob)",
     "plan-ready": r"(?i)(implementation plan|plan de implementaci)",
 }
+EVIDENCE_BOUNDARY = "model-driven-smoke-evaluation"
 
 
 def load_cases() -> list[dict[str, Any]]:
     document = json.loads(CASES_PATH.read_text(encoding="utf-8"))
     if document.get("schema_version") != 2:
         raise ValueError("Unsupported behavioral eval schema")
+    if document.get("evidence_boundary") != EVIDENCE_BOUNDARY:
+        raise ValueError(
+            f"Behavioral eval evidence_boundary must be {EVIDENCE_BOUNDARY}"
+        )
     cases = document.get("cases")
     if not isinstance(cases, list) or not cases:
         raise ValueError("Behavioral eval suite has no cases")
@@ -276,6 +281,37 @@ def evaluate_case(
         temporary.cleanup()
 
 
+def build_report(
+    harness: str,
+    comparison_mode: bool,
+    results: list[dict[str, Any]],
+) -> dict[str, Any]:
+    skill_results = [result for result in results if result["variant"] == "skill"]
+    control_results = [
+        result for result in results if result["variant"] == "control"
+    ]
+    return {
+        "schema_version": 2,
+        "evidence_boundary": EVIDENCE_BOUNDARY,
+        "harness": harness,
+        "comparison_mode": comparison_mode,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "passed": all(result["passed"] for result in skill_results),
+        "skill_pass_rate": (
+            sum(result["passed"] for result in skill_results) / len(skill_results)
+            if skill_results
+            else 0.0
+        ),
+        "control_pass_rate": (
+            sum(result["passed"] for result in control_results)
+            / len(control_results)
+            if control_results
+            else None
+        ),
+        "results": results,
+    }
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
@@ -340,28 +376,8 @@ def main() -> int:
                     f"case={case['id']}"
                 )
 
+    report = build_report(args.harness, args.compare_control, results)
     skill_results = [result for result in results if result["variant"] == "skill"]
-    control_results = [
-        result for result in results if result["variant"] == "control"
-    ]
-    report = {
-        "schema_version": 2,
-        "harness": args.harness,
-        "comparison_mode": args.compare_control,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-        "passed": all(result["passed"] for result in skill_results),
-        "skill_pass_rate": (
-            sum(result["passed"] for result in skill_results) / len(skill_results)
-            if skill_results
-            else 0.0
-        ),
-        "control_pass_rate": (
-            sum(result["passed"] for result in control_results) / len(control_results)
-            if control_results
-            else None
-        ),
-        "results": results,
-    }
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

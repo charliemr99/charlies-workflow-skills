@@ -1,5 +1,6 @@
 {
   "schema_version": 2,
+  "evidence_boundary": "model-driven-smoke-evaluation",
   "description": "Opt-in behavioral smoke checks for Charlie's Workflow phase gates.",
   "cases": [
     {

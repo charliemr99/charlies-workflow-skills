@@ -95,6 +95,8 @@ class AuthoredFileCoverageTests(unittest.TestCase):
         for path_expression in [
             'ROOT / "scripts" / "check-workflow-contract.py"',
             'ROOT / "scripts" / "test_check_workflow_contract.py"',
+            'ROOT / "scripts" / "check-lifecycle-proof.py"',
+            'ROOT / "scripts" / "test_check_lifecycle_proof.py"',
             'ROOT / "scripts" / "eval-workflow.py"',
             'ROOT / "scripts" / "test_eval_workflow.py"',
             'ROOT / "scripts" / "skill_relationships.py"',
@@ -107,6 +109,7 @@ class AuthoredFileCoverageTests(unittest.TestCase):
             'ROOT / "scripts" / "validate.sh"',
             'ROOT / ".github" / "workflows" / "validate.yml"',
             'ROOT / "scripts" / "vendor" / "openai-skill-creator" / "NOTICE.md"',
+            'ROOT / "evals" / "deterministic-lifecycle.json"',
         ]:
             self.assertIn(path_expression, source)
 
