@@ -5,7 +5,6 @@ description: >
   repo for missing docs, stale references, and gaps in existing files. Produces
   new pages, patches existing ones, and recommends docs the project should have.
 license: MIT
-compatibility: Adapted from Claude Code metadata to strict Agent Skills frontmatter.
 allowed-tools: Read Grep Glob Bash Write
 ---
 

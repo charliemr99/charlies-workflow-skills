@@ -10,6 +10,10 @@ pinned to `openai/skills` commit
 License 2.0. The complete license and provenance are in
 `scripts/vendor/openai-skill-creator/`.
 
+Normal validation also downloads the Agent Skills reference validator at the
+pinned PyPI requirement `skills-ref==0.1.1` through `uvx`. That package is a
+validation-time dependency and is not redistributed in this repository.
+
 ## Hallmark
 
 Vendored skill:
@@ -90,7 +94,7 @@ Packaging modifications:
 - Replaced upstream installation symlinks with the real `data/` and
   `scripts/` trees from the same reviewed commit.
 - Normalized command examples to resolve from the installed skill root.
-- Added strict Agent Skills license and compatibility metadata.
+- Added strict Agent Skills license metadata.
 
 The MIT license is preserved in `skills/ui-ux-pro-max/LICENSE.txt`.
 
@@ -111,7 +115,7 @@ Packaging modifications:
 - Removed Claude-only invocation metadata from the strict Agent Skills source.
 - Converted `allowed-tools` from a YAML list to the Agent Skills
   space-delimited string form.
-- Added license and compatibility metadata.
+- Added license metadata.
 
 The MIT license is preserved in `skills/doc-it/LICENSE.txt`.
 

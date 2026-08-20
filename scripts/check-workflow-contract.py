@@ -331,6 +331,7 @@ def main() -> None:
     require_text(
         ROOT / "README.md",
         [
+            "Codex-first, portable by the Agent Skills format",
             "Feature Track",
             "Project Track",
             "Hallmark",
@@ -339,6 +340,47 @@ def main() -> None:
             "Behavioral Smoke Evaluations",
             "three-viewport",
             "--compare-control",
+            "deterministic contract proof",
+            "project install",
+            "user install",
+            "selective install",
+            "receipt",
+            "uninstall",
+        ],
+    )
+    require_text(
+        ROOT / "docs" / "compatibility.md",
+        [
+            "real Codex, Claude Code, and Cursor lifecycle runs are pending",
+            "Hallmark network and third-party asset boundary",
+            "deterministic-contract-fixture",
+            "model-driven-smoke-evaluation",
+            "disable-model-invocation: true",
+        ],
+    )
+    require_text(
+        ROOT / "LICENSE",
+        ["Charlie-authored skill bodies are MIT"],
+    )
+    require_text(
+        ROOT / "scripts" / "validate.sh",
+        [
+            "test_check_skill_relationships.py",
+            "test_skill_package.py",
+            "test_check_lifecycle_proof.py",
+            "check-skill-relationships.py",
+            "check-lifecycle-proof.py",
+            "skills-ref==0.1.1",
+            "agentskills validate",
+        ],
+    )
+    require_text(
+        ROOT / ".github" / "workflows" / "validate.yml",
+        [
+            "scripts/install.sh",
+            "scripts/uninstall.sh",
+            "--scope project",
+            "--scope user",
         ],
     )
     require_text(
@@ -429,6 +471,7 @@ def main() -> None:
         CHARLIE / "references" / "documentation-and-artifacts.md",
         CHARLIE / "agents" / "openai.yaml",
         ROOT / "README.md",
+        ROOT / "docs" / "compatibility.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
         ROOT / "evals" / "deterministic-lifecycle.json",
         ROOT / "scripts" / "check-workflow-contract.py",
@@ -449,6 +492,7 @@ def main() -> None:
         ROOT / "scripts" / "vendor" / "openai-skill-creator" / "NOTICE.md",
         ROOT / "manifest.json",
         ROOT / "THIRD_PARTY_NOTICES.md",
+        ROOT / "LICENSE",
     ]
     placeholders = [
         str(path)

@@ -2,7 +2,6 @@
 name: brainstorming
 description: Use during non-trivial discovery to resolve intent, constraints, approaches, and an approval-ready design before implementation planning.
 license: MIT
-compatibility: Adapted for parent workflow routers that own spec location, approval evidence, sequencing, and publication.
 ---
 
 # Brainstorming Ideas Into Designs

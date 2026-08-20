@@ -21,23 +21,50 @@ jobs:
         with:
           python-version: "3.11"
 
+      - uses: astral-sh/setup-uv@v6
+        with:
+          version: "0.8.13"
+
       - name: Install validator dependency
         run: python -m pip install --disable-pip-version-check PyYAML==6.0.2
 
       - name: Check authored formats
         run: |
-          bash -n scripts/install.sh scripts/validate.sh
+          bash -n scripts/install.sh scripts/uninstall.sh scripts/validate.sh
           python -m json.tool manifest.json >/dev/null
-          python -m json.tool evals/charlies-workflow-cases.json >/dev/null 2>&1 || test ! -f evals/charlies-workflow-cases.json
+          python -m json.tool evals/charlies-workflow-cases.json >/dev/null
+          python -m json.tool evals/deterministic-lifecycle.json >/dev/null
 
       - name: Validate bundled skills and contracts
         run: ./scripts/validate.sh
 
-      - name: Exercise installer
+      - name: Exercise project and user install round trips
         run: |
-          target="$RUNNER_TEMP/codex/skills"
-          ./scripts/install.sh --harness codex --target-dir "$target" --dry-run
-          ./scripts/install.sh --harness codex --target-dir "$target"
-          ./scripts/validate.sh --skills-dir "$target"
-          test "$(find skills -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')" = \
-            "$(find "$target" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+          project="$RUNNER_TEMP/project"
+          user_home="$RUNNER_TEMP/user-home"
+          mkdir -p "$project" "$user_home"
+
+          if ./scripts/install.sh --dry-run; then
+            echo "Install without an explicit destination unexpectedly succeeded." >&2
+            exit 1
+          fi
+
+          ./scripts/install.sh --scope project --project-dir "$project" \
+            --harness codex --skill charlies-workflow
+          project_target="$project/.agents/skills"
+          test -f "$project_target/.charlies-workflow-skills/receipt.json"
+          ./scripts/validate.sh --skills-dir "$project_target"
+          ./scripts/uninstall.sh --scope project --project-dir "$project" \
+            --harness codex
+          test ! -e "$project_target/charlies-workflow"
+          test ! -e "$project_target/.charlies-workflow-skills/receipt.json"
+
+          HOME="$user_home" ./scripts/install.sh --scope user --harness claude \
+            --skill charlies-workflow
+          user_target="$user_home/.claude/skills"
+          test -f "$user_target/.charlies-workflow-skills/receipt.json"
+          grep -q '^disable-model-invocation: true$' \
+            "$user_target/charlies-workflow/SKILL.md"
+          HOME="$user_home" ./scripts/uninstall.sh --scope user --harness claude
+          test ! -e "$user_target/charlies-workflow"
+          test ! -e "$user_target/.charlies-workflow-skills/receipt.json"

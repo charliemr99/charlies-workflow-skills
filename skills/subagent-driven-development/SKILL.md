@@ -2,7 +2,6 @@
 name: subagent-driven-development
 description: Use to execute an approved implementation plan through fresh implementer and reviewer contexts when tasks are independently delegable.
 license: MIT
-compatibility: Adapted for parent workflow routers that own final review, cleanup, and publication.
 ---
 
 # Subagent-Driven Development

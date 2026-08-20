@@ -110,11 +110,59 @@ class AuthoredFileCoverageTests(unittest.TestCase):
             'ROOT / ".github" / "workflows" / "validate.yml"',
             'ROOT / "scripts" / "vendor" / "openai-skill-creator" / "NOTICE.md"',
             'ROOT / "evals" / "deterministic-lifecycle.json"',
+            'ROOT / "docs" / "compatibility.md"',
+            'ROOT / "LICENSE"',
         ]:
             self.assertIn(path_expression, source)
 
 
 class PackageCoherenceTests(unittest.TestCase):
+    def test_docs_and_validation_expose_portability_and_reversibility(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        compatibility_path = ROOT / "docs" / "compatibility.md"
+        self.assertTrue(compatibility_path.is_file())
+        compatibility = compatibility_path.read_text(encoding="utf-8")
+        validation = (ROOT / "scripts" / "validate.sh").read_text(encoding="utf-8")
+        workflow = (
+            ROOT / ".github" / "workflows" / "validate.yml"
+        ).read_text(encoding="utf-8")
+        license_text = (ROOT / "LICENSE").read_text(encoding="utf-8")
+
+        for phrase in [
+            "Codex-first, portable by the Agent Skills format",
+            "deterministic contract proof",
+            "project install",
+            "user install",
+            "selective install",
+            "receipt",
+            "uninstall",
+        ]:
+            self.assertIn(phrase, readme)
+        for phrase in [
+            "real Codex, Claude Code, and Cursor lifecycle runs are pending",
+            "Hallmark network and third-party asset boundary",
+        ]:
+            self.assertIn(phrase, compatibility)
+        self.assertIn("Charlie-authored skill bodies are MIT", license_text)
+
+        for command in [
+            "test_check_skill_relationships.py",
+            "test_skill_package.py",
+            "test_check_lifecycle_proof.py",
+            "check-skill-relationships.py",
+            "check-lifecycle-proof.py",
+            "skills-ref==0.1.1",
+            "agentskills validate",
+        ]:
+            self.assertIn(command, validation)
+        for command in [
+            "scripts/install.sh",
+            "scripts/uninstall.sh",
+            "--scope project",
+            "--scope user",
+        ]:
+            self.assertIn(command, workflow)
+
     def test_charlie_routes_helpers_through_a_portable_loading_contract(self) -> None:
         helper_loading = (
             ROOT
@@ -164,6 +212,14 @@ class PackageCoherenceTests(unittest.TestCase):
                 self.assertIn("bundled", skill["dependencies"])
                 self.assertIn("external_optional", skill["dependencies"])
                 self.assertIn("source", skill)
+
+    def test_source_frontmatter_stays_within_both_validator_schemas(self) -> None:
+        for skill_file in sorted((ROOT / "skills").glob("*/SKILL.md")):
+            with self.subTest(skill=skill_file.parent.name):
+                frontmatter = skill_file.read_text(encoding="utf-8").split(
+                    "---", 2
+                )[1]
+                self.assertNotIn("compatibility:", frontmatter)
 
 
 if __name__ == "__main__":

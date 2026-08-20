@@ -2,7 +2,6 @@
 name: writing-plans
 description: Use after an approved design to produce an executable, test-first implementation plan before touching code.
 license: MIT
-compatibility: Adapted for parent workflow routers that own artifact location, approval lineage, execution strategy, and publication.
 ---
 
 # Writing Implementation Plans

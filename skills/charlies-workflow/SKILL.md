@@ -2,7 +2,6 @@
 name: charlies-workflow
 description: Use when the user explicitly invokes $charlies-workflow for a greenfield project, MVP, feature, bug fix, refactor, UI change, or PR-ready implementation workflow
 license: MIT
-compatibility: Codex-first; portable to Agent Skills harnesses with harness-specific invocation and tool semantics.
 ---
 
 # Charlies Workflow
