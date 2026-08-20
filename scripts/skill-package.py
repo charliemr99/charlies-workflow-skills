@@ -436,6 +436,7 @@ def uninstall(args: argparse.Namespace) -> int:
     receipt_path, receipt = _load_receipt(target)
     classifications: list[tuple[dict[str, Any], str, Path | None]] = []
     seen_names: set[str] = set()
+    migrated_legacy_digests = False
 
     for raw_entry in reversed(receipt["skills"]):
         if not isinstance(raw_entry, dict) or not isinstance(
@@ -487,6 +488,7 @@ def uninstall(args: argparse.Namespace) -> int:
                 if backup_digest is None:
                     backup_digest = tree_digest(backup)
                     raw_entry["backup_digest"] = backup_digest
+                    migrated_legacy_digests = True
             elif backup_digest is None:
                 raise PackageError(
                     f"{name}: required backup and legacy digest are missing: {backup}"
@@ -514,6 +516,8 @@ def uninstall(args: argparse.Namespace) -> int:
             print(f"would remove: {name}" if args.dry_run else f"removed: {name}")
     if args.dry_run:
         return 1 if any(state == "modified" for _, state, _ in classifications) else 0
+    if migrated_legacy_digests:
+        _write_json_atomic(receipt_path, receipt)
 
     retained: list[dict[str, Any]] = []
     pending_names = {entry["name"] for entry, _state, _backup in classifications}

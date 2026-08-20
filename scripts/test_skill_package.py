@@ -256,6 +256,7 @@ class SkillPackageTests(unittest.TestCase):
             item for item in receipt["skills"] if item["name"] == "brainstorming"
         )
         self.assertEqual(entry["action"], "replaced")
+        self.assertRegex(entry["backup_digest"], r"^[0-9a-f]{64}$")
         self.assertTrue((target / entry["backup_path"] / "user.txt").is_file())
 
         uninstall = self.run_cli("uninstall", "--target-dir", str(target))
@@ -487,6 +488,11 @@ class SkillPackageTests(unittest.TestCase):
             harness="codex",
             dry_run=False,
         )
+        receipt_path = target / RECEIPT
+        legacy_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        for entry in legacy_receipt["skills"]:
+            entry.pop("backup_digest", None)
+        receipt_path.write_text(json.dumps(legacy_receipt), encoding="utf-8")
 
         with mock.patch.object(
             package,
@@ -497,7 +503,7 @@ class SkillPackageTests(unittest.TestCase):
                 with self.assertRaisesRegex(OSError, "injected checkpoint failure"):
                     package.uninstall(arguments)
 
-        receipt = json.loads((target / RECEIPT).read_text(encoding="utf-8"))
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
         self.assertEqual(len(receipt["skills"]), 2)
         self.assertEqual(
             (target / "brainstorming" / "user.txt").read_text(encoding="utf-8"),
