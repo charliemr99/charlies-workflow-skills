@@ -472,18 +472,26 @@ def uninstall(args: argparse.Namespace) -> int:
             raise PackageError(f"{name}: replaced entry requires a backup path")
         if action == "created" and backup_value is not None:
             raise PackageError(f"{name}: created entry may not have a backup path")
-        if action == "replaced" and (
+        if action == "replaced" and backup_digest is not None and (
             not isinstance(backup_digest, str)
             or not DIGEST_PATTERN.fullmatch(backup_digest)
         ):
-            raise PackageError(f"{name}: replaced entry requires a backup digest")
+            raise PackageError(f"{name}: invalid backup digest")
         if action == "created" and backup_digest is not None:
             raise PackageError(f"{name}: created entry may not have a backup digest")
         if backup_value is not None:
             if not isinstance(backup_value, str):
                 raise PackageError(f"{name}: invalid backup path in receipt")
             backup = _safe_backup_path(target, backup_value)
-            if not path_exists(backup):
+            if path_exists(backup):
+                if backup_digest is None:
+                    backup_digest = tree_digest(backup)
+                    raw_entry["backup_digest"] = backup_digest
+            elif backup_digest is None:
+                raise PackageError(
+                    f"{name}: required backup and legacy digest are missing: {backup}"
+                )
+            else:
                 if current_digest == backup_digest:
                     state = "restored"
                 else:

@@ -513,6 +513,34 @@ class SkillPackageTests(unittest.TestCase):
             )
         self.assertFalse((target / RECEIPT).exists())
 
+    def test_legacy_replacement_receipt_without_backup_digest_is_migrated(self) -> None:
+        target = self.root / "legacy-receipt"
+        existing = target / "brainstorming"
+        existing.mkdir(parents=True)
+        original = existing / "user.txt"
+        original.write_text("original\n", encoding="utf-8")
+        self.assert_success(
+            self.run_cli(
+                "install",
+                "--target-dir",
+                str(target),
+                "--skill",
+                "brainstorming",
+                "--force",
+            )
+        )
+        receipt_path = target / RECEIPT
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        for entry in receipt["skills"]:
+            entry.pop("backup_digest", None)
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+        result = self.run_cli("uninstall", "--target-dir", str(target))
+
+        self.assert_success(result)
+        self.assertEqual(original.read_text(encoding="utf-8"), "original\n")
+        self.assertFalse(receipt_path.exists())
+
     def test_uninstall_rejects_receipt_skill_path_escape(self) -> None:
         package = load_package_module()
         target = self.root / "unsafe-receipt"
