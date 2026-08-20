@@ -467,6 +467,7 @@ def main() -> None:
         CHARLIE / "assets" / "run-state-template.json",
         CHARLIE / "references" / "project-track.md",
         CHARLIE / "references" / "hallmark-routing.md",
+        CHARLIE / "references" / "helper-loading.md",
         CHARLIE / "references" / "ponytail-routing.md",
         CHARLIE / "references" / "documentation-and-artifacts.md",
         CHARLIE / "agents" / "openai.yaml",
