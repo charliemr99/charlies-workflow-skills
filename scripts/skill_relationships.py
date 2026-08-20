@@ -161,6 +161,18 @@ def _validate_entry(root: Path, name: str, entry: dict[str, Any]) -> None:
         raise AssertionError(
             f"{name}: greenbyte-authored ownership requires repository-owned source"
         )
+    ownership_contracts = {
+        "third-party": ("upstream", False),
+        "third-party-adapted": ("upstream-adapted", True),
+        "third-party-derived": ("upstream-derived", True),
+    }
+    if ownership in ownership_contracts:
+        expected_source, expected_adapted = ownership_contracts[ownership]
+        if source_type != expected_source or entry["adapted"] is not expected_adapted:
+            raise AssertionError(
+                f"{name}: ownership {ownership} requires source type "
+                f"{expected_source} and adapted={str(expected_adapted).lower()}"
+            )
     if source_type.startswith("upstream") and not any(
         isinstance(source.get(locator), str) and source[locator].strip()
         for locator in ("repository", "package")

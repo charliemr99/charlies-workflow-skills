@@ -18,6 +18,7 @@
   "request": {
     "id": "fixture-responsive-navigation",
     "track": "Feature Track",
+    "tier": "Medium",
     "mode": "autonomous",
     "outcome": "Add a keyboard-accessible responsive navigation drawer."
   },

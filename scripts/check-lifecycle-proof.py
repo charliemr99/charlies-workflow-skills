@@ -31,6 +31,9 @@ VIEWPORTS = {
     "tablet": (768, 1024),
     "desktop": (1440, 900),
 }
+TRACKS = {"Feature Track", "Project Track"}
+TIERS = {"Small", "Medium", "Complex"}
+APPROVAL_MODES = {"interactive", "autonomous"}
 
 
 def load_fixture(path: Path) -> dict[str, Any]:
@@ -86,7 +89,7 @@ def require_workflow_path(value: Any, label: str) -> str:
         or not value.startswith("output/")
     ):
         raise AssertionError(f"{label} must be a safe relative output path")
-    return value
+    return path.as_posix()
 
 
 def validate_lifecycle(document: dict[str, Any]) -> None:
@@ -112,6 +115,15 @@ def validate_lifecycle(document: dict[str, Any]) -> None:
     request = require_object(document, "request")
     require_nonempty_string(request, "id", "request id")
     require_nonempty_string(request, "outcome", "request outcome")
+    for key, allowed in (
+        ("track", TRACKS),
+        ("tier", TIERS),
+        ("mode", APPROVAL_MODES),
+    ):
+        if request.get(key) not in allowed:
+            raise AssertionError(
+                f"request {key} must be one of: {', '.join(sorted(allowed))}"
+            )
 
     grounding = require_object(document, "grounding")
     require_nonempty_string(grounding, "repository", "grounding repository")

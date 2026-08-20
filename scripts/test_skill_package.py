@@ -401,6 +401,66 @@ class SkillPackageTests(unittest.TestCase):
         self.assertEqual(original.read_text(encoding="utf-8"), "original\n")
         self.assertFalse((target / RECEIPT).exists())
 
+    def test_interrupted_multi_skill_uninstall_is_retryable(self) -> None:
+        package = load_package_module()
+        target = self.root / "interrupted-uninstall"
+        for name in ("writing-plans", "brainstorming"):
+            existing = target / name
+            existing.mkdir(parents=True)
+            (existing / "user.txt").write_text(
+                f"original {name}\n", encoding="utf-8"
+            )
+        self.assert_success(
+            self.run_cli(
+                "install",
+                "--target-dir",
+                str(target),
+                "--skill",
+                "brainstorming",
+                "--force",
+            )
+        )
+        arguments = argparse.Namespace(
+            target_dir=str(target),
+            scope=None,
+            project_dir=None,
+            harness="codex",
+            dry_run=False,
+        )
+        original_move = package.shutil.move
+
+        def fail_writing_plans_restore(source: str, destination: str) -> str:
+            if Path(destination).name == "writing-plans":
+                raise OSError("injected restore failure")
+            return original_move(source, destination)
+
+        with mock.patch.object(
+            package.shutil,
+            "move",
+            side_effect=fail_writing_plans_restore,
+        ):
+            with contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(OSError, "injected restore failure"):
+                    package.uninstall(arguments)
+
+        receipt = json.loads((target / RECEIPT).read_text(encoding="utf-8"))
+        self.assertEqual(
+            [entry["name"] for entry in receipt["skills"]],
+            ["writing-plans"],
+        )
+        self.assertEqual(
+            (target / "brainstorming" / "user.txt").read_text(encoding="utf-8"),
+            "original brainstorming\n",
+        )
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(package.uninstall(arguments), 0)
+        self.assertEqual(
+            (target / "writing-plans" / "user.txt").read_text(encoding="utf-8"),
+            "original writing-plans\n",
+        )
+        self.assertFalse((target / RECEIPT).exists())
+
     def test_uninstall_rejects_receipt_skill_path_escape(self) -> None:
         package = load_package_module()
         target = self.root / "unsafe-receipt"

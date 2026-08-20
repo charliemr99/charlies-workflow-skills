@@ -233,6 +233,27 @@ def _write_json_atomic(path: Path, document: dict[str, Any]) -> None:
     os.replace(temporary, path)
 
 
+def _write_uninstall_progress(
+    receipt_path: Path,
+    receipt: dict[str, Any],
+    pending_names: set[str],
+    status: str,
+) -> None:
+    pending_receipt = dict(receipt)
+    pending = [
+        entry
+        for entry in receipt["skills"]
+        if entry["name"] in pending_names
+    ]
+    pending_receipt["skills"] = pending
+    pending_receipt["resolved_skills"] = [entry["name"] for entry in pending]
+    pending_receipt["uninstall_status"] = status
+    pending_receipt["uninstall_attempted_at"] = datetime.now(
+        timezone.utc
+    ).isoformat()
+    _write_json_atomic(receipt_path, pending_receipt)
+
+
 def _add_package_documents(skill_root: Path) -> None:
     for source_name, installed_name in PACKAGE_DOCUMENTS.items():
         source = ROOT / source_name
@@ -468,11 +489,18 @@ def uninstall(args: argparse.Namespace) -> int:
         return 1 if any(state == "modified" for _, state, _ in classifications) else 0
 
     retained: list[dict[str, Any]] = []
+    pending_names = {entry["name"] for entry, _state, _backup in classifications}
     for entry, state, backup in classifications:
         name = entry["name"]
         destination = _safe_skill_path(target, name, "receipt")
         if state == "modified":
             retained.append(entry)
+            _write_uninstall_progress(
+                receipt_path,
+                receipt,
+                pending_names,
+                "uninstall-in-progress",
+            )
             continue
 
         if path_exists(destination):
@@ -480,17 +508,22 @@ def uninstall(args: argparse.Namespace) -> int:
         if entry.get("action") == "replaced" and backup is not None:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(backup), str(destination))
+        pending_names.remove(name)
+        _write_uninstall_progress(
+            receipt_path,
+            receipt,
+            pending_names,
+            "uninstall-in-progress",
+        )
 
     state_root = target / PACKAGE_STATE
     if retained:
-        retained_receipt = dict(receipt)
-        retained_receipt["skills"] = retained
-        retained_receipt["resolved_skills"] = [entry["name"] for entry in retained]
-        retained_receipt["uninstall_status"] = "incomplete-modified-skills-retained"
-        retained_receipt["uninstall_attempted_at"] = datetime.now(
-            timezone.utc
-        ).isoformat()
-        _write_json_atomic(receipt_path, retained_receipt)
+        _write_uninstall_progress(
+            receipt_path,
+            receipt,
+            {entry["name"] for entry in retained},
+            "incomplete-modified-skills-retained",
+        )
         print(
             "error: uninstall incomplete; locally modified skills remain under "
             "the active receipt",

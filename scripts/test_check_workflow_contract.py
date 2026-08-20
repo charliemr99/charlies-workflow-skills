@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import importlib.util
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -117,6 +118,16 @@ class AuthoredFileCoverageTests(unittest.TestCase):
 
 
 class PackageCoherenceTests(unittest.TestCase):
+    def test_ci_actions_are_pinned_to_full_commit_shas(self) -> None:
+        workflow = (
+            ROOT / ".github" / "workflows" / "validate.yml"
+        ).read_text(encoding="utf-8")
+        revisions = re.findall(r"uses:\s+[^@\s]+@([^\s#]+)", workflow)
+        self.assertTrue(revisions)
+        self.assertTrue(
+            all(re.fullmatch(r"[0-9a-f]{40}", revision) for revision in revisions)
+        )
+
     def test_docs_and_validation_expose_portability_and_reversibility(self) -> None:
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         compatibility_path = ROOT / "docs" / "compatibility.md"

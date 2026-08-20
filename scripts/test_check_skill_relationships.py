@@ -280,12 +280,27 @@ class SkillRelationshipTests(unittest.TestCase):
         self.fixture.add_skill("alpha")
         self.fixture.entries[0]["ownership"] = "third-party"
         self.fixture.entries[0]["source"] = {
-            "type": "upstream-derived",
+            "type": "upstream",
             "repository": "example/upstream",
         }
         self.fixture.write_manifest()
 
         with self.assertRaisesRegex(AssertionError, "immutable commit"):
+            relationships.validate_manifest_graph(self.fixture.root)
+
+    def test_adapted_ownership_requires_adapted_source_taxonomy(self) -> None:
+        relationships = load_relationships()
+        self.fixture.add_skill("alpha")
+        self.fixture.entries[0]["ownership"] = "third-party-adapted"
+        self.fixture.entries[0]["adapted"] = True
+        self.fixture.entries[0]["source"] = {
+            "type": "upstream",
+            "repository": "example/upstream",
+            "commit": "a" * 40,
+        }
+        self.fixture.write_manifest()
+
+        with self.assertRaisesRegex(AssertionError, "ownership.*source type"):
             relationships.validate_manifest_graph(self.fixture.root)
 
 

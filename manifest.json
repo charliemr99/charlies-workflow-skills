@@ -68,7 +68,7 @@
         "references/study.md"
       ],
       "source": {
-        "type": "upstream",
+        "type": "upstream-adapted",
         "repository": "Nutlope/hallmark",
         "version": "1.1.0",
         "commit": "aeb42fb354ff4efa36ab475773a082315a3af2ce"
@@ -105,7 +105,7 @@
         "scripts/search.py"
       ],
       "source": {
-        "type": "upstream",
+        "type": "upstream-adapted",
         "repository": "nextlevelbuilder/ui-ux-pro-max-skill",
         "commit": "87c6c3e0e1a8891d79795d3e3061f10b650de51b"
       },
@@ -121,7 +121,7 @@
       "dependencies": {"bundled": [], "external_optional": []},
       "required_resources": ["LICENSE.txt"],
       "source": {
-        "type": "upstream",
+        "type": "upstream-adapted",
         "repository": "onlydole/overdue",
         "commit": "eb1f11807296ae09826fbfc4ecac84bda97982d9",
         "path": ".claude/skills/doc-it/SKILL.md"

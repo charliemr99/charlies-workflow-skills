@@ -58,6 +58,19 @@ class LifecycleProofTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "decision ledger"):
             self.checker.validate_lifecycle(document)
 
+    def test_requires_track_tier_and_approval_mode(self) -> None:
+        for key, value in (
+            ("track", "unknown"),
+            ("tier", "tiny"),
+            ("mode", "silent"),
+        ):
+            with self.subTest(key=key):
+                document = self.mutated()
+                document["request"][key] = value
+
+                with self.assertRaisesRegex(AssertionError, f"request {key}"):
+                    self.checker.validate_lifecycle(document)
+
     def test_requires_explicit_spec_approval(self) -> None:
         document = self.mutated()
         document["spec"]["approval"]["explicit"] = False
@@ -82,6 +95,13 @@ class LifecycleProofTests(unittest.TestCase):
         document = self.mutated()
         document["spec"]["path"] = "../spec.md"
         with self.assertRaisesRegex(AssertionError, "spec path.*safe relative"):
+            self.checker.validate_lifecycle(document)
+
+        document = self.mutated()
+        document["plan"]["path"] = document["spec"]["path"].replace(
+            "output/", "output/./", 1
+        )
+        with self.assertRaisesRegex(AssertionError, "spec and plan paths"):
             self.checker.validate_lifecycle(document)
 
     def test_green_requires_observed_red(self) -> None:
