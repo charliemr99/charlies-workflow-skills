@@ -461,6 +461,58 @@ class SkillPackageTests(unittest.TestCase):
         )
         self.assertFalse((target / RECEIPT).exists())
 
+    def test_uninstall_recovers_after_restore_before_progress_write(self) -> None:
+        package = load_package_module()
+        target = self.root / "restore-before-checkpoint"
+        for name in ("writing-plans", "brainstorming"):
+            existing = target / name
+            existing.mkdir(parents=True)
+            (existing / "user.txt").write_text(
+                f"original {name}\n", encoding="utf-8"
+            )
+        self.assert_success(
+            self.run_cli(
+                "install",
+                "--target-dir",
+                str(target),
+                "--skill",
+                "brainstorming",
+                "--force",
+            )
+        )
+        arguments = argparse.Namespace(
+            target_dir=str(target),
+            scope=None,
+            project_dir=None,
+            harness="codex",
+            dry_run=False,
+        )
+
+        with mock.patch.object(
+            package,
+            "_write_uninstall_progress",
+            side_effect=OSError("injected checkpoint failure"),
+        ):
+            with contextlib.redirect_stdout(io.StringIO()):
+                with self.assertRaisesRegex(OSError, "injected checkpoint failure"):
+                    package.uninstall(arguments)
+
+        receipt = json.loads((target / RECEIPT).read_text(encoding="utf-8"))
+        self.assertEqual(len(receipt["skills"]), 2)
+        self.assertEqual(
+            (target / "brainstorming" / "user.txt").read_text(encoding="utf-8"),
+            "original brainstorming\n",
+        )
+
+        with contextlib.redirect_stdout(io.StringIO()):
+            self.assertEqual(package.uninstall(arguments), 0)
+        for name in ("writing-plans", "brainstorming"):
+            self.assertEqual(
+                (target / name / "user.txt").read_text(encoding="utf-8"),
+                f"original {name}\n",
+            )
+        self.assertFalse((target / RECEIPT).exists())
+
     def test_uninstall_rejects_receipt_skill_path_escape(self) -> None:
         package = load_package_module()
         target = self.root / "unsafe-receipt"

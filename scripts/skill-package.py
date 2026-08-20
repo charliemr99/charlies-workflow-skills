@@ -370,6 +370,7 @@ def install(args: argparse.Namespace) -> int:
                 "action": "replaced" if existed else "created",
                 "source_digest": tree_digest(source),
                 "installed_digest": installed_digest,
+                "backup_digest": tree_digest(backup) if backup else None,
                 "backup_path": (
                     backup.relative_to(target).as_posix() if backup else None
                 ),
@@ -453,6 +454,7 @@ def uninstall(args: argparse.Namespace) -> int:
             digest = raw_entry.get(digest_key)
             if not isinstance(digest, str) or not DIGEST_PATTERN.fullmatch(digest):
                 raise PackageError(f"{name}: invalid {digest_key} in receipt")
+        current_digest: str | None = None
         if path_exists(destination):
             current_digest = tree_digest(destination)
             state = (
@@ -465,21 +467,38 @@ def uninstall(args: argparse.Namespace) -> int:
 
         backup: Path | None = None
         backup_value = raw_entry.get("backup_path")
+        backup_digest = raw_entry.get("backup_digest")
         if action == "replaced" and not backup_value:
             raise PackageError(f"{name}: replaced entry requires a backup path")
         if action == "created" and backup_value is not None:
             raise PackageError(f"{name}: created entry may not have a backup path")
+        if action == "replaced" and (
+            not isinstance(backup_digest, str)
+            or not DIGEST_PATTERN.fullmatch(backup_digest)
+        ):
+            raise PackageError(f"{name}: replaced entry requires a backup digest")
+        if action == "created" and backup_digest is not None:
+            raise PackageError(f"{name}: created entry may not have a backup digest")
         if backup_value is not None:
             if not isinstance(backup_value, str):
                 raise PackageError(f"{name}: invalid backup path in receipt")
             backup = _safe_backup_path(target, backup_value)
-            if state != "modified" and not path_exists(backup):
-                raise PackageError(f"{name}: required backup is missing: {backup}")
+            if not path_exists(backup):
+                if current_digest == backup_digest:
+                    state = "restored"
+                else:
+                    raise PackageError(f"{name}: required backup is missing: {backup}")
         classifications.append((raw_entry, state, backup))
 
     for entry, state, _backup in classifications:
         name = entry["name"]
-        if state == "modified":
+        if state == "restored":
+            print(
+                f"would retain restored: {name}"
+                if args.dry_run
+                else f"already restored: {name}"
+            )
+        elif state == "modified":
             print(f"would retain modified: {name}" if args.dry_run else f"retained modified: {name}")
         elif entry.get("action") == "replaced":
             print(f"would restore: {name}" if args.dry_run else f"restored: {name}")
@@ -493,6 +512,15 @@ def uninstall(args: argparse.Namespace) -> int:
     for entry, state, backup in classifications:
         name = entry["name"]
         destination = _safe_skill_path(target, name, "receipt")
+        if state == "restored":
+            pending_names.remove(name)
+            _write_uninstall_progress(
+                receipt_path,
+                receipt,
+                pending_names,
+                "uninstall-in-progress",
+            )
+            continue
         if state == "modified":
             retained.append(entry)
             _write_uninstall_progress(
