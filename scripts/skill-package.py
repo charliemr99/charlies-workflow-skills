@@ -191,10 +191,10 @@ def _safe_backup_path(target: Path, backup_value: str) -> Path:
     return backup
 
 
-def _safe_skill_destination(target: Path, name: str) -> Path:
+def _safe_skill_path(root: Path, name: str, source: str) -> Path:
     if not SKILL_NAME_PATTERN.fullmatch(name):
-        raise PackageError(f"unsafe skill name in receipt: {name!r}")
-    return target / name
+        raise PackageError(f"unsafe skill name in {source}: {name!r}")
+    return root / name
 
 
 def _write_json_atomic(path: Path, document: dict[str, Any]) -> None:
@@ -250,8 +250,8 @@ def install(args: argparse.Namespace) -> int:
 
     operations: list[tuple[str, Path, Path, bool]] = []
     for name in resolved:
-        source = SKILLS_ROOT / name
-        destination = target / name
+        source = _safe_skill_path(SKILLS_ROOT, name, "manifest")
+        destination = _safe_skill_path(target, name, "manifest")
         if not source.is_dir() or not (source / "SKILL.md").is_file():
             raise PackageError(f"missing source skill: {source}")
         exists = path_exists(destination)
@@ -388,7 +388,7 @@ def uninstall(args: argparse.Namespace) -> int:
         if name in seen_names:
             raise PackageError(f"receipt contains duplicate skill entry: {name}")
         seen_names.add(name)
-        destination = _safe_skill_destination(target, name)
+        destination = _safe_skill_path(target, name, "receipt")
         action = raw_entry.get("action")
         if action not in {"created", "replaced"}:
             raise PackageError(f"{name}: invalid action in receipt")
@@ -434,7 +434,7 @@ def uninstall(args: argparse.Namespace) -> int:
     retained: list[dict[str, Any]] = []
     for entry, state, backup in classifications:
         name = entry["name"]
-        destination = _safe_skill_destination(target, name)
+        destination = _safe_skill_path(target, name, "receipt")
         if state == "modified":
             retained.append(entry)
             continue

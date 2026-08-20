@@ -464,6 +464,49 @@ class SkillPackageTests(unittest.TestCase):
             "---\nname: alpha\ndescription: Alpha skill.\n---\n",
         )
 
+    def test_install_rejects_unsafe_manifest_skill_name(self) -> None:
+        package = load_package_module()
+        package_root = self.root / "unsafe-package"
+        skills_root = package_root / "skills"
+        skills_root.mkdir(parents=True)
+        outside_source = package_root / "outside"
+        outside_source.mkdir()
+        (outside_source / "SKILL.md").write_text(
+            "---\nname: outside\ndescription: Outside skill.\n---\n",
+            encoding="utf-8",
+        )
+        (package_root / "manifest.json").write_text(
+            json.dumps(
+                {
+                    "name": "fixture",
+                    "package_version": "1.0.0",
+                    "skills": [
+                        {
+                            "name": "../outside",
+                            "activation": {"implicit": True},
+                            "dependencies": {"bundled": []},
+                        }
+                    ],
+                }
+            ),
+            encoding="utf-8",
+        )
+        arguments = argparse.Namespace(
+            target_dir=str(self.root / "unsafe-target"),
+            scope=None,
+            project_dir=None,
+            harness="codex",
+            skill=["../outside"],
+            force=False,
+            dry_run=True,
+        )
+
+        with mock.patch.object(package, "ROOT", package_root), mock.patch.object(
+            package, "SKILLS_ROOT", skills_root
+        ):
+            with self.assertRaisesRegex(package.PackageError, "unsafe skill name"):
+                package.install(arguments)
+
     def test_partial_failure_restores_a_preexisting_skill(self) -> None:
         package = load_package_module()
         target = self.root / "rollback"
