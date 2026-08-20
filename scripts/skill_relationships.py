@@ -12,6 +12,9 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 LINK_PATTERN = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
+REFERENCE_LINK_PATTERN = re.compile(
+    r"(?m)^[ \t]{0,3}\[[^\]]+\]:[ \t]*(<[^>\n]+>|\S+)"
+)
 PACKAGE_VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
 EXTERNAL_SCHEMES = {"http", "https", "mailto"}
 ACTIVATION_ROLES = {"explicit-entry", "routed-helper", "standalone-helper"}
@@ -195,11 +198,17 @@ def validate_manifest_graph(root: Path = ROOT) -> None:
 
     by_name = _skill_entries(manifest)
     skills_root = root / "skills"
-    directory_names = {
-        path.name
-        for path in skills_root.iterdir()
-        if path.is_dir() and (path / "SKILL.md").is_file()
-    }
+    skill_directories = {path.name: path for path in skills_root.iterdir() if path.is_dir()}
+    missing_skill_files = sorted(
+        name
+        for name, path in skill_directories.items()
+        if not (path / "SKILL.md").is_file()
+    )
+    if missing_skill_files:
+        raise AssertionError(
+            f"skill directories missing SKILL.md: {missing_skill_files}"
+        )
+    directory_names = set(skill_directories)
     manifest_names = set(by_name)
     if manifest_names != directory_names:
         missing = sorted(directory_names - manifest_names)
@@ -244,7 +253,11 @@ def validate_markdown_links(root: Path = ROOT) -> None:
             boundary_label = "skill root"
 
         content = markdown.read_text(encoding="utf-8")
-        for match in LINK_PATTERN.finditer(content):
+        matches = [
+            *LINK_PATTERN.finditer(content),
+            *REFERENCE_LINK_PATTERN.finditer(content),
+        ]
+        for match in matches:
             target = _link_target(match.group(1))
             if not target or target.startswith("#"):
                 continue

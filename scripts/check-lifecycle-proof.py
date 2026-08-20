@@ -98,6 +98,33 @@ def validate_lifecycle(document: dict[str, Any]) -> None:
     require_nonempty_string(request, "id", "request id")
     require_nonempty_string(request, "outcome", "request outcome")
 
+    grounding = require_object(document, "grounding")
+    require_nonempty_string(grounding, "repository", "grounding repository")
+    for key in ("facts", "affected_surfaces", "constraints"):
+        values = grounding.get(key)
+        if not isinstance(values, list) or not values or not all(
+            isinstance(value, str) and value.strip() for value in values
+        ):
+            raise AssertionError(f"grounding {key} must contain concrete evidence")
+
+    decision_ledger = require_object(document, "decision_ledger")
+    items = decision_ledger.get("items")
+    if (
+        decision_ledger.get("status") != "decision-complete"
+        or decision_ledger.get("open_material_decisions") != []
+        or not isinstance(items, list)
+        or not items
+    ):
+        raise AssertionError("decision ledger must be decision-complete")
+    for item in items:
+        if not isinstance(item, dict) or item.get("status") not in {
+            "settled",
+            "deferred",
+        }:
+            raise AssertionError("decision ledger items must be settled or deferred")
+        for key in ("topic", "decision", "evidence"):
+            require_nonempty_string(item, key, f"decision ledger {key}")
+
     spec = require_object(document, "spec")
     require_nonempty_string(spec, "path", "spec path")
     spec_digest = require_sha256(spec.get("sha256"), "spec sha256")
@@ -156,7 +183,7 @@ def validate_lifecycle(document: dict[str, Any]) -> None:
         if not isinstance(scenario, dict) or scenario.get("status") != "passed":
             raise AssertionError("browser scenario must have passed")
         steps = scenario.get("steps")
-        if not isinstance(steps, list) or not all(
+        if not isinstance(steps, list) or not steps or not all(
             isinstance(step, str) and step.strip() for step in steps
         ):
             raise AssertionError("browser scenario needs concrete functional steps")
@@ -174,13 +201,18 @@ def validate_lifecycle(document: dict[str, Any]) -> None:
             raise AssertionError(
                 "browser viewports must include small-mobile, tablet, desktop"
             )
+        viewport_artifacts: list[str] = []
         for name, (width, height) in VIEWPORTS.items():
             viewport = by_name[name]
             if viewport.get("width") != width or viewport.get("height") != height:
                 raise AssertionError(
                     f"{name} viewport must be exactly {width}x{height}"
                 )
-            require_artifact_path(viewport.get("artifact"))
+            viewport_artifacts.append(
+                require_artifact_path(viewport.get("artifact"))
+            )
+        if len(set(viewport_artifacts)) != len(VIEWPORTS):
+            raise AssertionError("browser proof requires distinct viewport artifacts")
         artifacts = scenario.get("artifacts")
         if not isinstance(artifacts, list) or not artifacts:
             raise AssertionError("browser artifact collection may not be empty")

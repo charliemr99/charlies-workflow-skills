@@ -87,9 +87,9 @@
       "source": {
         "type": "upstream",
         "repository": "emilkowalski/skills",
-        "commit": "ecf66bbd1fb33c25332b6b0e454d08049978284c"
+        "commit": "f76beceb7d3fc8c43309cefad5a095a206103a4e"
       },
-      "notes": "Unmodified upstream skill body pinned by Git blob identity."
+      "notes": "Upstream skill body and MIT license are pinned to a reviewed commit; the skill blob is unchanged from ecf66bbd1fb33c25332b6b0e454d08049978284c."
     },
     {
       "name": "ui-ux-pro-max",
@@ -145,7 +145,7 @@
       "category": "browser",
       "ownership": "third-party-derived",
       "license": "Apache-2.0",
-      "adapted": false,
+      "adapted": true,
       "activation": {"role": "routed-helper", "implicit": true},
       "dependencies": {"bundled": [], "external_optional": ["playwright-cli"]},
       "required_resources": ["LICENSE.txt", "NOTICE.txt"],
@@ -157,7 +157,7 @@
       "category": "browser",
       "ownership": "third-party-derived",
       "license": "Apache-2.0",
-      "adapted": false,
+      "adapted": true,
       "activation": {"role": "routed-helper", "implicit": true},
       "dependencies": {"bundled": [], "external_optional": ["playwright", "js_repl"]},
       "required_resources": ["LICENSE.txt", "NOTICE.txt"],

@@ -8,12 +8,14 @@ loading cannot depend on one product-specific command.
 
 ## Resolution Order
 
-1. Prefer the harness's native skill inventory or invocation mechanism when it
-   exposes the selected helper.
-2. In this package, resolve the helper as a **bundled sibling** at
+1. In this package, resolve a declared helper as the authoritative **bundled sibling** at
    `../<helper-name>/SKILL.md` relative to Charlie's skill root.
-3. For namespaced plugin skills such as `superpowers:brainstorming`, use the
-   plugin-provided skill when it is available and compatible.
+2. Use the harness's native skill inventory or invocation mechanism only when
+   it resolves that same bundled sibling and adapted contract.
+3. A namespaced plugin skill such as `superpowers:brainstorming` is a fallback
+   only when the bundled sibling is absent and the plugin exposes a
+   compatible parent contract that preserves Charlie's ownership. Otherwise
+   skip the plugin and apply Charlie's phase directly.
 4. If neither the declared bundled helper nor an accepted plugin form exists,
    record it as unavailable and follow Charlie's base phase contract directly.
    Do not silently substitute an unrelated skill.

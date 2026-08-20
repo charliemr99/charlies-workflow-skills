@@ -153,6 +153,29 @@ class SkillPackageTests(unittest.TestCase):
             receipt["resolved_skills"],
         )
 
+    def test_installed_skills_include_package_license_and_provenance(self) -> None:
+        target = self.root / "licensed"
+        result = self.run_cli(
+            "install",
+            "--target-dir",
+            str(target),
+            "--skill",
+            "brainstorming",
+        )
+
+        self.assert_success(result)
+        installed = target / "brainstorming"
+        for source_name, installed_name in (
+            ("LICENSE", "PACKAGE_LICENSE.txt"),
+            ("THIRD_PARTY_NOTICES.md", "PACKAGE_THIRD_PARTY_NOTICES.md"),
+            ("manifest.json", "PACKAGE_MANIFEST.json"),
+        ):
+            with self.subTest(source=source_name):
+                self.assertEqual(
+                    (installed / installed_name).read_bytes(),
+                    (ROOT / source_name).read_bytes(),
+                )
+
     def test_receipt_records_explicit_scope(self) -> None:
         project = self.root / "scoped-project"
         project.mkdir()
@@ -242,6 +265,34 @@ class SkillPackageTests(unittest.TestCase):
             "original\n",
         )
         self.assertFalse((target / RECEIPT).exists())
+
+    def test_force_restores_preexisting_external_symlink(self) -> None:
+        target = self.root / "replace-symlink"
+        target.mkdir()
+        outside = self.root / "outside-skill"
+        outside.mkdir()
+        (outside / "user.txt").write_text("original\n", encoding="utf-8")
+        destination = target / "brainstorming"
+        destination.symlink_to(outside, target_is_directory=True)
+
+        install = self.run_cli(
+            "install",
+            "--target-dir",
+            str(target),
+            "--skill",
+            "brainstorming",
+            "--force",
+        )
+        self.assert_success(install)
+        self.assertTrue(destination.is_dir())
+        self.assertFalse(destination.is_symlink())
+
+        uninstall = self.run_cli("uninstall", "--target-dir", str(target))
+
+        self.assert_success(uninstall)
+        self.assertTrue(destination.is_symlink())
+        self.assertEqual(destination.readlink(), outside)
+        self.assertEqual((destination / "user.txt").read_text(), "original\n")
 
     def test_uninstall_removes_unchanged_created_skill(self) -> None:
         target = self.root / "created"

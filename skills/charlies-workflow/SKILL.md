@@ -116,6 +116,10 @@ ceremony.
 
 Load a helper only when the current action needs it:
 
+The local name and namespaced form below are lookup aliases. In an installed
+package, the adapted bundled sibling is authoritative under
+[helper-loading.md](references/helper-loading.md).
+
 - `brainstorming` / `superpowers:brainstorming`: non-trivial discovery and spec.
 - `writing-plans` / `superpowers:writing-plans`: Medium and Complex plans.
 - `test-driven-development` / `superpowers:test-driven-development`: behavior changes.

@@ -46,6 +46,18 @@ class LifecycleProofTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "transition order"):
             self.checker.validate_lifecycle(document)
 
+    def test_requires_grounding_and_decision_complete_ledger(self) -> None:
+        document = self.mutated()
+        document.pop("grounding")
+
+        with self.assertRaisesRegex(AssertionError, "grounding"):
+            self.checker.validate_lifecycle(document)
+
+        document = self.mutated()
+        document["decision_ledger"]["items"][0]["status"] = "open"
+        with self.assertRaisesRegex(AssertionError, "decision ledger"):
+            self.checker.validate_lifecycle(document)
+
     def test_requires_explicit_spec_approval(self) -> None:
         document = self.mutated()
         document["spec"]["approval"]["explicit"] = False
@@ -74,6 +86,11 @@ class LifecycleProofTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "functional browser evidence"):
             self.checker.validate_lifecycle(document)
 
+        document = self.mutated()
+        document["browser"]["scenarios"][0]["steps"] = []
+        with self.assertRaisesRegex(AssertionError, "functional steps"):
+            self.checker.validate_lifecycle(document)
+
     def test_browser_requires_three_named_viewports_and_artifacts(self) -> None:
         document = self.mutated()
         document["browser"]["scenarios"][0]["viewports"] = document["browser"][
@@ -86,6 +103,12 @@ class LifecycleProofTests(unittest.TestCase):
         document = self.mutated()
         document["browser"]["scenarios"][0]["viewports"][0]["artifact"] = ""
         with self.assertRaisesRegex(AssertionError, "browser artifact"):
+            self.checker.validate_lifecycle(document)
+
+        document = self.mutated()
+        viewports = document["browser"]["scenarios"][0]["viewports"]
+        viewports[1]["artifact"] = viewports[0]["artifact"]
+        with self.assertRaisesRegex(AssertionError, "distinct viewport artifacts"):
             self.checker.validate_lifecycle(document)
 
     def test_verification_and_review_must_match_candidate_head(self) -> None:

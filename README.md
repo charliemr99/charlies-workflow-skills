@@ -89,6 +89,8 @@ up.
 Every successful install writes a receipt under
 `<skills-root>/.charlies-workflow-skills/receipt.json`. A second install at
 that destination requires uninstall first.
+Each installed skill also carries package license, third-party notice, and
+manifest provenance files so selective copies remain self-describing.
 
 ### Uninstall
 

@@ -176,6 +176,12 @@ class PackageCoherenceTests(unittest.TestCase):
             "bundled sibling",
             helper_loading.read_text(encoding="utf-8"),
         )
+        content = helper_loading.read_text(encoding="utf-8")
+        self.assertLess(
+            content.index("bundled sibling"),
+            content.index("native skill inventory"),
+        )
+        self.assertIn("compatible parent contract", content)
 
     def test_public_bundle_omits_competing_executing_plans_helper(self) -> None:
         self.assertFalse((ROOT / "skills" / "executing-plans").exists())
@@ -212,6 +218,26 @@ class PackageCoherenceTests(unittest.TestCase):
                 self.assertIn("bundled", skill["dependencies"])
                 self.assertIn("external_optional", skill["dependencies"])
                 self.assertIn("source", skill)
+
+    def test_manifest_records_exact_adaptation_provenance(self) -> None:
+        manifest = json.loads((ROOT / "manifest.json").read_text(encoding="utf-8"))
+        actual = {skill["name"]: skill["adapted"] for skill in manifest["skills"]}
+        expected = {
+            "charlies-workflow": False,
+            "hallmark": True,
+            "emil-design-eng": False,
+            "ui-ux-pro-max": True,
+            "doc-it": True,
+            "pr-title-and-description": False,
+            "playwright": True,
+            "playwright-interactive": True,
+            "brainstorming": True,
+            "writing-plans": True,
+            "test-driven-development": False,
+            "using-git-worktrees": False,
+            "subagent-driven-development": True,
+        }
+        self.assertEqual(actual, expected)
 
     def test_source_frontmatter_stays_within_both_validator_schemas(self) -> None:
         for skill_file in sorted((ROOT / "skills").glob("*/SKILL.md")):

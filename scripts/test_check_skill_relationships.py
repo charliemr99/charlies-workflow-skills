@@ -119,6 +119,15 @@ class SkillRelationshipTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "manifest.*directories"):
             relationships.validate_manifest_graph(self.fixture.root)
 
+    def test_orphan_directory_without_skill_file_is_rejected(self) -> None:
+        relationships = load_relationships()
+        self.fixture.add_skill("alpha")
+        (self.fixture.root / "skills" / "orphan").mkdir()
+        self.fixture.write_manifest()
+
+        with self.assertRaisesRegex(AssertionError, "missing SKILL.md"):
+            relationships.validate_manifest_graph(self.fixture.root)
+
     def test_missing_bundled_dependency_is_rejected(self) -> None:
         relationships = load_relationships()
         self.fixture.add_skill("alpha", bundled=["missing"])
@@ -152,6 +161,17 @@ class SkillRelationshipTests(unittest.TestCase):
         (self.fixture.root / "README.md").write_text(
             "[Missing package doc](docs/missing.md)\n", encoding="utf-8"
         )
+
+        with self.assertRaisesRegex(AssertionError, "missing link target"):
+            relationships.validate_markdown_links(self.fixture.root)
+
+    def test_missing_reference_style_link_is_rejected(self) -> None:
+        relationships = load_relationships()
+        self.fixture.add_skill(
+            "alpha",
+            body="Read [the guide][guide].\n\n[guide]: references/missing.md\n",
+        )
+        self.fixture.write_manifest()
 
         with self.assertRaisesRegex(AssertionError, "missing link target"):
             relationships.validate_markdown_links(self.fixture.root)

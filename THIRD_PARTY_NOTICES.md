@@ -73,10 +73,12 @@ Vendored skill: `emil-design-eng`
 Source:
 
 - Repository: `emilkowalski/skills`
-- Reviewed commit: `ecf66bbd1fb33c25332b6b0e454d08049978284c`
+- Reviewed commit: `f76beceb7d3fc8c43309cefad5a095a206103a4e`
 
-The skill body is pinned to the reviewed upstream Git blob. Its MIT license is
-preserved in `skills/emil-design-eng/LICENSE.txt`.
+The skill body and MIT license are pinned to that reviewed revision. The skill
+blob is unchanged from the earlier reviewed content commit
+`ecf66bbd1fb33c25332b6b0e454d08049978284c`. The license is preserved in
+`skills/emil-design-eng/LICENSE.txt`.
 
 Copyright (c) 2026 Emil Kowalski.
 

@@ -27,6 +27,11 @@ RECEIPT_NAME = "receipt.json"
 HARNESSES = ("codex", "claude", "cursor")
 SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
 DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+PACKAGE_DOCUMENTS = {
+    "LICENSE": "PACKAGE_LICENSE.txt",
+    "THIRD_PARTY_NOTICES.md": "PACKAGE_THIRD_PARTY_NOTICES.md",
+    "manifest.json": "PACKAGE_MANIFEST.json",
+}
 
 
 class PackageError(RuntimeError):
@@ -180,10 +185,15 @@ def _entry_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 
 def _safe_backup_path(target: Path, backup_value: str) -> Path:
-    backup = (target / backup_value).resolve()
+    relative = Path(backup_value)
+    if relative.is_absolute() or ".." in relative.parts:
+        raise PackageError(
+            f"receipt backup escapes package state: {backup_value}"
+        )
+    backup = target / relative
     backup_root = (target / PACKAGE_STATE / "backups").resolve()
     try:
-        backup.relative_to(backup_root)
+        backup.parent.resolve().relative_to(backup_root)
     except ValueError as error:
         raise PackageError(
             f"receipt backup escapes package state: {backup_value}"
@@ -205,6 +215,20 @@ def _write_json_atomic(path: Path, document: dict[str, Any]) -> None:
         encoding="utf-8",
     )
     os.replace(temporary, path)
+
+
+def _add_package_documents(skill_root: Path) -> None:
+    for source_name, installed_name in PACKAGE_DOCUMENTS.items():
+        source = ROOT / source_name
+        destination = skill_root / installed_name
+        if not source.is_file():
+            raise PackageError(f"missing package document: {source}")
+        if path_exists(destination):
+            raise PackageError(
+                f"{skill_root.name}: reserved package document exists: "
+                f"{installed_name}"
+            )
+        shutil.copy2(source, destination)
 
 
 def _prune_empty_state_directories(state_root: Path) -> None:
@@ -298,6 +322,7 @@ def install(args: argparse.Namespace) -> int:
             staging_paths.append(staging_parent)
             staged_skill = staging_parent / name
             shutil.copytree(source, staged_skill, symlinks=True)
+            _add_package_documents(staged_skill)
             implicit = entries[name]["activation"]["implicit"]
             adapt_explicit_skill(staged_skill, harness, implicit)
             installed_digest = tree_digest(staged_skill)

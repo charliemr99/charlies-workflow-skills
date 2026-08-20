@@ -21,6 +21,30 @@
     "mode": "autonomous",
     "outcome": "Add a keyboard-accessible responsive navigation drawer."
   },
+  "grounding": {
+    "repository": "fixture/repository",
+    "facts": [
+      "The existing application already has authenticated route navigation."
+    ],
+    "affected_surfaces": [
+      "navigation trigger, drawer, focus restoration, and responsive layout"
+    ],
+    "constraints": [
+      "Preserve desktop navigation behavior and keyboard accessibility."
+    ]
+  },
+  "decision_ledger": {
+    "status": "decision-complete",
+    "open_material_decisions": [],
+    "items": [
+      {
+        "topic": "responsive interaction",
+        "status": "settled",
+        "decision": "Use a modal drawer below the desktop breakpoint.",
+        "evidence": "Existing navigation and accessibility conventions."
+      }
+    ]
+  },
   "spec": {
     "path": "output/workflow/fixture-responsive-navigation/spec.md",
     "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
