@@ -10,9 +10,6 @@ from pathlib import Path
 from typing import Any
 from urllib.parse import unquote, urlsplit
 
-import yaml
-
-
 ROOT = Path(__file__).resolve().parents[1]
 LINK_PATTERN = re.compile(r"!?\[[^\]]*\]\(([^)]+)\)")
 PACKAGE_VERSION_PATTERN = re.compile(r"^\d+\.\d+\.\d+$")
@@ -261,6 +258,13 @@ def validate_markdown_links(root: Path = ROOT) -> None:
 
 
 def validate_activation_policies(root: Path = ROOT) -> None:
+    try:
+        import yaml
+    except ModuleNotFoundError as error:
+        raise AssertionError(
+            "PyYAML is required to validate agents/openai.yaml activation policy"
+        ) from error
+
     manifest = load_manifest(root)
     for name, entry in _skill_entries(manifest).items():
         expected_implicit = entry["activation"]["implicit"]
