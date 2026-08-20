@@ -230,31 +230,39 @@ def _link_target(raw_target: str) -> str:
 
 def validate_markdown_links(root: Path = ROOT) -> None:
     skills_root = root / "skills"
-    for skill_root in sorted(path for path in skills_root.iterdir() if path.is_dir()):
-        resolved_skill_root = skill_root.resolve()
-        for markdown in sorted(skill_root.rglob("*.md")):
-            content = markdown.read_text(encoding="utf-8")
-            for match in LINK_PATTERN.finditer(content):
-                target = _link_target(match.group(1))
-                if not target or target.startswith("#"):
-                    continue
-                parsed = urlsplit(target)
-                if parsed.scheme in EXTERNAL_SCHEMES or target.startswith("//"):
-                    continue
-                relative_path = parsed.path
-                if not relative_path:
-                    continue
-                candidate = (markdown.parent / relative_path).resolve()
-                try:
-                    candidate.relative_to(resolved_skill_root)
-                except ValueError as error:
-                    raise AssertionError(
-                        f"{markdown}: link escapes skill root: {target}"
-                    ) from error
-                if not candidate.exists():
-                    raise AssertionError(
-                        f"{markdown}: missing link target: {target}"
-                    )
+    resolved_root = root.resolve()
+    for markdown in sorted(root.rglob("*.md")):
+        try:
+            relative_to_skills = markdown.relative_to(skills_root)
+        except ValueError:
+            boundary = resolved_root
+            boundary_label = "package root"
+        else:
+            if not relative_to_skills.parts:
+                continue
+            boundary = (skills_root / relative_to_skills.parts[0]).resolve()
+            boundary_label = "skill root"
+
+        content = markdown.read_text(encoding="utf-8")
+        for match in LINK_PATTERN.finditer(content):
+            target = _link_target(match.group(1))
+            if not target or target.startswith("#"):
+                continue
+            parsed = urlsplit(target)
+            if parsed.scheme in EXTERNAL_SCHEMES or target.startswith("//"):
+                continue
+            relative_path = parsed.path
+            if not relative_path:
+                continue
+            candidate = (markdown.parent / relative_path).resolve()
+            try:
+                candidate.relative_to(boundary)
+            except ValueError as error:
+                raise AssertionError(
+                    f"{markdown}: link escapes {boundary_label}: {target}"
+                ) from error
+            if not candidate.exists():
+                raise AssertionError(f"{markdown}: missing link target: {target}")
 
 
 def validate_activation_policies(root: Path = ROOT) -> None:

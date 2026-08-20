@@ -153,6 +153,28 @@ class SkillPackageTests(unittest.TestCase):
             receipt["resolved_skills"],
         )
 
+    def test_receipt_records_explicit_scope(self) -> None:
+        project = self.root / "scoped-project"
+        project.mkdir()
+
+        result = self.run_cli(
+            "install",
+            "--scope",
+            "project",
+            "--project-dir",
+            str(project),
+            "--harness",
+            "codex",
+            "--skill",
+            "brainstorming",
+        )
+
+        self.assert_success(result)
+        receipt = json.loads(
+            (project / ".agents/skills" / RECEIPT).read_text(encoding="utf-8")
+        )
+        self.assertEqual(receipt["scope"], "project")
+
     def test_dry_run_creates_nothing(self) -> None:
         target = self.root / "dry-run"
         result = self.run_cli(
@@ -255,14 +277,87 @@ class SkillPackageTests(unittest.TestCase):
 
         uninstall = self.run_cli("uninstall", "--target-dir", str(target))
 
-        self.assert_success(uninstall)
+        self.assertNotEqual(uninstall.returncode, 0)
         self.assertIn("retained modified", uninstall.stdout)
+        self.assertIn("uninstall incomplete", uninstall.stderr)
         self.assertEqual(marker.read_text(encoding="utf-8"), "local\n")
-        self.assertFalse((target / RECEIPT).exists())
-        retained = list(
-            (target / ".charlies-workflow-skills").glob("retained-*.json")
+        receipt = json.loads((target / RECEIPT).read_text(encoding="utf-8"))
+        self.assertEqual(
+            [entry["name"] for entry in receipt["skills"]], ["brainstorming"]
         )
-        self.assertEqual(len(retained), 1)
+
+        marker.unlink()
+        retry = self.run_cli("uninstall", "--target-dir", str(target))
+        self.assert_success(retry)
+        self.assertFalse((target / "brainstorming").exists())
+        self.assertFalse((target / RECEIPT).exists())
+
+    def test_modified_replacement_keeps_backup_until_retry(self) -> None:
+        target = self.root / "modified-replacement"
+        existing = target / "brainstorming"
+        existing.mkdir(parents=True)
+        original = existing / "user.txt"
+        original.write_text("original\n", encoding="utf-8")
+        self.assert_success(
+            self.run_cli(
+                "install",
+                "--target-dir",
+                str(target),
+                "--skill",
+                "brainstorming",
+                "--force",
+            )
+        )
+        local_change = target / "brainstorming" / "local-change.txt"
+        local_change.write_text("local\n", encoding="utf-8")
+
+        first = self.run_cli("uninstall", "--target-dir", str(target))
+
+        self.assertNotEqual(first.returncode, 0)
+        receipt = json.loads((target / RECEIPT).read_text(encoding="utf-8"))
+        backup = target / receipt["skills"][0]["backup_path"]
+        self.assertEqual((backup / "user.txt").read_text(encoding="utf-8"), "original\n")
+
+        local_change.unlink()
+        retry = self.run_cli("uninstall", "--target-dir", str(target))
+        self.assert_success(retry)
+        self.assertEqual(original.read_text(encoding="utf-8"), "original\n")
+        self.assertFalse((target / RECEIPT).exists())
+
+    def test_uninstall_rejects_receipt_skill_path_escape(self) -> None:
+        package = load_package_module()
+        target = self.root / "unsafe-receipt"
+        self.assert_success(
+            self.run_cli(
+                "install",
+                "--target-dir",
+                str(target),
+                "--skill",
+                "brainstorming",
+            )
+        )
+        outside = self.root / "outside"
+        outside.mkdir()
+        marker = outside / "keep.txt"
+        marker.write_text("keep\n", encoding="utf-8")
+        receipt_path = target / RECEIPT
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        receipt["skills"] = [
+            {
+                "name": "../outside",
+                "action": "created",
+                "source_digest": "a" * 64,
+                "installed_digest": package.tree_digest(outside),
+                "backup_path": None,
+            }
+        ]
+        receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
+
+        result = self.run_cli("uninstall", "--target-dir", str(target))
+
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unsafe skill name", result.stderr)
+        self.assertEqual(marker.read_text(encoding="utf-8"), "keep\n")
 
     def test_claude_and_cursor_adapt_only_explicit_entries(self) -> None:
         source_charlie = (
@@ -407,6 +502,7 @@ class SkillPackageTests(unittest.TestCase):
         self.assertEqual(marker.read_text(encoding="utf-8"), "original\n")
         self.assertFalse((target / "writing-plans").exists())
         self.assertFalse((target / RECEIPT).exists())
+        self.assertFalse((target / ".charlies-workflow-skills").exists())
 
 
 if __name__ == "__main__":

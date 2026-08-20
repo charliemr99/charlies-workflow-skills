@@ -7,6 +7,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import shutil
 import stat
 import sys
@@ -24,6 +25,8 @@ SKILLS_ROOT = ROOT / "skills"
 PACKAGE_STATE = ".charlies-workflow-skills"
 RECEIPT_NAME = "receipt.json"
 HARNESSES = ("codex", "claude", "cursor")
+SKILL_NAME_PATTERN = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+DIGEST_PATTERN = re.compile(r"^[0-9a-f]{64}$")
 
 
 class PackageError(RuntimeError):
@@ -178,11 +181,20 @@ def _entry_map(manifest: dict[str, Any]) -> dict[str, dict[str, Any]]:
 
 def _safe_backup_path(target: Path, backup_value: str) -> Path:
     backup = (target / backup_value).resolve()
+    backup_root = (target / PACKAGE_STATE / "backups").resolve()
     try:
-        backup.relative_to(target.resolve())
+        backup.relative_to(backup_root)
     except ValueError as error:
-        raise PackageError(f"receipt backup escapes target: {backup_value}") from error
+        raise PackageError(
+            f"receipt backup escapes package state: {backup_value}"
+        ) from error
     return backup
+
+
+def _safe_skill_destination(target: Path, name: str) -> Path:
+    if not SKILL_NAME_PATTERN.fullmatch(name):
+        raise PackageError(f"unsafe skill name in receipt: {name!r}")
+    return target / name
 
 
 def _write_json_atomic(path: Path, document: dict[str, Any]) -> None:
@@ -193,6 +205,24 @@ def _write_json_atomic(path: Path, document: dict[str, Any]) -> None:
         encoding="utf-8",
     )
     os.replace(temporary, path)
+
+
+def _prune_empty_state_directories(state_root: Path) -> None:
+    if not state_root.is_dir() or state_root.is_symlink():
+        return
+    for directory in sorted(
+        (path for path in state_root.rglob("*") if path.is_dir()),
+        key=lambda path: len(path.parts),
+        reverse=True,
+    ):
+        try:
+            directory.rmdir()
+        except OSError:
+            pass
+    try:
+        state_root.rmdir()
+    except OSError:
+        pass
 
 
 def install(args: argparse.Namespace) -> int:
@@ -232,7 +262,6 @@ def install(args: argparse.Namespace) -> int:
             )
         operations.append((name, source, destination, exists))
 
-    action = "would replace" if args.force else "would install"
     print(f"target: {target}")
     print(f"harness: {harness}")
     print(f"resolved skills: {', '.join(resolved)}")
@@ -297,6 +326,7 @@ def install(args: argparse.Namespace) -> int:
             "installed_at": datetime.now(timezone.utc).isoformat(),
             "target_dir": str(target),
             "harness": harness,
+            "scope": args.scope or "custom",
             "requested_skills": requested,
             "resolved_skills": resolved,
             "skills": records,
@@ -314,6 +344,7 @@ def install(args: argparse.Namespace) -> int:
         for staging in staging_paths:
             if path_exists(staging):
                 remove_path(staging)
+        _prune_empty_state_directories(state_root)
         raise
 
     print(f"receipt: {receipt_path}")
@@ -321,7 +352,10 @@ def install(args: argparse.Namespace) -> int:
 
 
 def _load_receipt(target: Path) -> tuple[Path, dict[str, Any]]:
-    receipt_path = target / PACKAGE_STATE / RECEIPT_NAME
+    state_root = target / PACKAGE_STATE
+    if state_root.is_symlink():
+        raise PackageError(f"{state_root}: package state may not be a symlink")
+    receipt_path = state_root / RECEIPT_NAME
     if not receipt_path.is_file():
         raise PackageError(f"{target}: no active package receipt")
     try:
@@ -343,6 +377,7 @@ def uninstall(args: argparse.Namespace) -> int:
     target = resolve_target(args, home)
     receipt_path, receipt = _load_receipt(target)
     classifications: list[tuple[dict[str, Any], str, Path | None]] = []
+    seen_names: set[str] = set()
 
     for raw_entry in reversed(receipt["skills"]):
         if not isinstance(raw_entry, dict) or not isinstance(
@@ -350,7 +385,17 @@ def uninstall(args: argparse.Namespace) -> int:
         ):
             raise PackageError("receipt contains an invalid skill entry")
         name = raw_entry["name"]
-        destination = target / name
+        if name in seen_names:
+            raise PackageError(f"receipt contains duplicate skill entry: {name}")
+        seen_names.add(name)
+        destination = _safe_skill_destination(target, name)
+        action = raw_entry.get("action")
+        if action not in {"created", "replaced"}:
+            raise PackageError(f"{name}: invalid action in receipt")
+        for digest_key in ("source_digest", "installed_digest"):
+            digest = raw_entry.get(digest_key)
+            if not isinstance(digest, str) or not DIGEST_PATTERN.fullmatch(digest):
+                raise PackageError(f"{name}: invalid {digest_key} in receipt")
         if path_exists(destination):
             current_digest = tree_digest(destination)
             state = (
@@ -363,7 +408,11 @@ def uninstall(args: argparse.Namespace) -> int:
 
         backup: Path | None = None
         backup_value = raw_entry.get("backup_path")
-        if backup_value:
+        if action == "replaced" and not backup_value:
+            raise PackageError(f"{name}: replaced entry requires a backup path")
+        if action == "created" and backup_value is not None:
+            raise PackageError(f"{name}: created entry may not have a backup path")
+        if backup_value is not None:
             if not isinstance(backup_value, str):
                 raise PackageError(f"{name}: invalid backup path in receipt")
             backup = _safe_backup_path(target, backup_value)
@@ -380,12 +429,12 @@ def uninstall(args: argparse.Namespace) -> int:
         else:
             print(f"would remove: {name}" if args.dry_run else f"removed: {name}")
     if args.dry_run:
-        return 0
+        return 1 if any(state == "modified" for _, state, _ in classifications) else 0
 
     retained: list[dict[str, Any]] = []
     for entry, state, backup in classifications:
         name = entry["name"]
-        destination = target / name
+        destination = _safe_skill_destination(target, name)
         if state == "modified":
             retained.append(entry)
             continue
@@ -396,31 +445,26 @@ def uninstall(args: argparse.Namespace) -> int:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.move(str(backup), str(destination))
 
-    receipt_path.unlink()
     state_root = target / PACKAGE_STATE
     if retained:
-        retained_path = state_root / f"retained-{receipt.get('run_id', uuid.uuid4().hex)}.json"
-        retained_receipt = {
-            "schema_version": 1,
-            "reason": "locally modified installed skills were retained",
-            "original_receipt": receipt,
-            "retained_skills": [entry["name"] for entry in retained],
-        }
-        _write_json_atomic(retained_path, retained_receipt)
+        retained_receipt = dict(receipt)
+        retained_receipt["skills"] = retained
+        retained_receipt["resolved_skills"] = [entry["name"] for entry in retained]
+        retained_receipt["uninstall_status"] = "incomplete-modified-skills-retained"
+        retained_receipt["uninstall_attempted_at"] = datetime.now(
+            timezone.utc
+        ).isoformat()
+        _write_json_atomic(receipt_path, retained_receipt)
+        print(
+            "error: uninstall incomplete; locally modified skills remain under "
+            "the active receipt",
+            file=sys.stderr,
+        )
+        return 1
 
-    for directory in sorted(
-        (path for path in state_root.rglob("*") if path.is_dir()),
-        key=lambda path: len(path.parts),
-        reverse=True,
-    ):
-        try:
-            directory.rmdir()
-        except OSError:
-            pass
-    try:
-        state_root.rmdir()
-    except OSError:
-        pass
+    receipt_path.unlink()
+
+    _prune_empty_state_directories(state_root)
 
     print(f"uninstalled package receipt from: {target}")
     return 0

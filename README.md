@@ -102,7 +102,9 @@ Use the same scope, or point directly to the receipted skills root:
 ```
 
 Uninstall removes unchanged package copies, restores forced-install backups,
-and retains any installed skill that was modified locally.
+and retains any installed skill that was modified locally. A partial uninstall
+returns nonzero and keeps an active receipt so the modified copy can be handled
+deliberately and the uninstall retried.
 
 ## Use
 

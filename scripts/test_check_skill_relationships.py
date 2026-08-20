@@ -145,6 +145,17 @@ class SkillRelationshipTests(unittest.TestCase):
         with self.assertRaisesRegex(AssertionError, "missing link target"):
             relationships.validate_markdown_links(self.fixture.root)
 
+    def test_missing_package_markdown_link_is_rejected(self) -> None:
+        relationships = load_relationships()
+        self.fixture.add_skill("alpha")
+        self.fixture.write_manifest()
+        (self.fixture.root / "README.md").write_text(
+            "[Missing package doc](docs/missing.md)\n", encoding="utf-8"
+        )
+
+        with self.assertRaisesRegex(AssertionError, "missing link target"):
+            relationships.validate_markdown_links(self.fixture.root)
+
     def test_relative_link_may_not_escape_skill_root(self) -> None:
         relationships = load_relationships()
         (self.fixture.root / "outside.md").write_text("outside\n", encoding="utf-8")
