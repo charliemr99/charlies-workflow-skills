@@ -221,6 +221,23 @@ class PackageCoherenceTests(unittest.TestCase):
                 )[1]
                 self.assertNotIn("compatibility:", frontmatter)
 
+    def test_vendored_ui_resources_use_repository_line_endings(self) -> None:
+        skill_root = ROOT / "skills" / "ui-ux-pro-max"
+        resources = [
+            *sorted((skill_root / "data").rglob("*")),
+            *sorted((skill_root / "scripts").rglob("*")),
+        ]
+        for resource in resources:
+            if not resource.is_file():
+                continue
+            with self.subTest(resource=resource.relative_to(skill_root)):
+                content = resource.read_bytes()
+                self.assertNotIn(b"\r\n", content)
+                text = content.decode("utf-8")
+                self.assertTrue(
+                    all(line == line.rstrip(" \t") for line in text.splitlines())
+                )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -94,6 +94,8 @@ Packaging modifications:
 - Replaced upstream installation symlinks with the real `data/` and
   `scripts/` trees from the same reviewed commit.
 - Normalized command examples to resolve from the installed skill root.
+- Normalized vendored text resources from CRLF to LF and removed trailing
+  line-end whitespace so repository integrity checks remain deterministic.
 - Added strict Agent Skills license metadata.
 
 The MIT license is preserved in `skills/ui-ux-pro-max/LICENSE.txt`.

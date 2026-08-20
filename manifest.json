@@ -109,7 +109,7 @@
         "repository": "nextlevelbuilder/ui-ux-pro-max-skill",
         "commit": "87c6c3e0e1a8891d79795d3e3061f10b650de51b"
       },
-      "notes": "Upstream symlink targets are vendored as real resources and command paths are normalized to the installed skill root."
+      "notes": "Upstream symlink targets are vendored as real resources; command paths and text line endings are normalized for portable installation and repository checks."
     },
     {
       "name": "doc-it",
