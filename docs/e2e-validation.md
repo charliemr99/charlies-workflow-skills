@@ -261,7 +261,10 @@ gate had failed.
 7. This is one controlled feature and one run per harness. It measures this
    lifecycle, model configuration, fixture, and date; it is not a general model
    ranking.
-8. Cursor lifecycle validation remains pending.
+8. The runner recorded but did not explicitly pin the model flags. The models
+   above are the active models proven by native logs; a future run can drift if
+   harness defaults change.
+9. Cursor lifecycle validation remains pending.
 
 ## Runner Improvements From This Audit
 
