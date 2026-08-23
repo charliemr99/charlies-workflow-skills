@@ -175,8 +175,9 @@ npm install --global @dosu/decant@0.4.0
 decant --version
 ```
 
-See [cross-harness E2E validation](docs/e2e-validation.md) for the contract,
-measured results, and interpretation limits.
+See [cross-harness E2E telemetry](docs/e2e-validation.md) for the contract,
+per-turn models, time, tokens, cache activity, cost reconciliation, tool calls,
+delivery footprint, and interpretation limits.
 
 ## License
 

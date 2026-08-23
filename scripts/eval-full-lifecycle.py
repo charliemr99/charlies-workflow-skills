@@ -212,6 +212,368 @@ def find_session_log(harness: str, session_id: str, home: Path) -> Path:
     return matches[0]
 
 
+def _read_json_lines(path: Path) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict):
+            records.append(record)
+    return records
+
+
+def _parse_json_lines(text: str) -> list[dict[str, Any]]:
+    records: list[dict[str, Any]] = []
+    for line in text.splitlines():
+        try:
+            record = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        if isinstance(record, dict):
+            records.append(record)
+    return records
+
+
+def _timestamp_ms(value: Any) -> int | None:
+    if not isinstance(value, str):
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    return round(parsed.timestamp() * 1000)
+
+
+def _sum_fields(rows: list[dict[str, Any]], fields: tuple[str, ...]) -> dict[str, int]:
+    return {
+        field: sum(
+            int(row.get(field, 0))
+            for row in rows
+            if isinstance(row.get(field, 0), (int, float))
+        )
+        for field in fields
+    }
+
+
+def parse_codex_native_telemetry(
+    session_log: Path, turn_names: list[str]
+) -> dict[str, Any]:
+    """Read authoritative per-turn Codex usage before Decant normalization."""
+    records = _read_json_lines(session_log)
+    session_meta: dict[str, Any] = {}
+    turn_order: list[str] = []
+    turns: dict[str, dict[str, Any]] = {}
+    current_turn_id: str | None = None
+    context_window_tokens = 0
+    peak_context_tokens = 0
+    tool_totals: dict[str, int] = {}
+
+    for record in records:
+        record_type = record.get("type")
+        payload = record.get("payload")
+        if record_type == "session_meta" and isinstance(payload, dict):
+            session_meta = payload
+            continue
+        if record_type == "turn_context" and isinstance(payload, dict):
+            turn_id = payload.get("turn_id")
+            if isinstance(turn_id, str):
+                turn = turns.setdefault(turn_id, {"harness_turn_id": turn_id})
+                turn["model"] = payload.get("model")
+                turn["reasoning_effort"] = payload.get("effort")
+            continue
+        if record_type == "response_item" and isinstance(payload, dict):
+            if payload.get("type") != "custom_tool_call":
+                continue
+            metadata = payload.get("internal_chat_message_metadata_passthrough")
+            turn_id = metadata.get("turn_id") if isinstance(metadata, dict) else None
+            if not isinstance(turn_id, str):
+                turn_id = current_turn_id
+            tool_input = payload.get("input")
+            matches = (
+                re.findall(r"tools\.([A-Za-z0-9_]+)\s*\(", tool_input)
+                if isinstance(tool_input, str)
+                else []
+            )
+            tool_name = matches[0] if matches else str(payload.get("name", "unknown"))
+            tool_totals[tool_name] = tool_totals.get(tool_name, 0) + 1
+            if isinstance(turn_id, str):
+                turn = turns.setdefault(turn_id, {"harness_turn_id": turn_id})
+                per_turn = turn.setdefault("tools", {})
+                per_turn[tool_name] = per_turn.get(tool_name, 0) + 1
+            continue
+        if record_type != "event_msg" or not isinstance(payload, dict):
+            continue
+        event_type = payload.get("type")
+        if event_type == "task_started":
+            turn_id = payload.get("turn_id")
+            if not isinstance(turn_id, str):
+                continue
+            current_turn_id = turn_id
+            if turn_id not in turn_order:
+                turn_order.append(turn_id)
+            turn = turns.setdefault(turn_id, {"harness_turn_id": turn_id})
+            turn["started_at"] = record.get("timestamp")
+        elif event_type == "token_count" and isinstance(payload.get("info"), dict):
+            info = payload["info"]
+            context_window_tokens = max(
+                context_window_tokens, int(info.get("model_context_window") or 0)
+            )
+            last_usage = info.get("last_token_usage")
+            if isinstance(last_usage, dict):
+                peak_context_tokens = max(
+                    peak_context_tokens, int(last_usage.get("input_tokens") or 0)
+                )
+            if current_turn_id is not None:
+                usage = info.get("total_token_usage")
+                if isinstance(usage, dict):
+                    turns.setdefault(
+                        current_turn_id, {"harness_turn_id": current_turn_id}
+                    )["usage"] = dict(usage)
+        elif event_type == "task_complete":
+            turn_id = payload.get("turn_id")
+            if not isinstance(turn_id, str):
+                continue
+            turn = turns.setdefault(turn_id, {"harness_turn_id": turn_id})
+            turn["ended_at"] = record.get("timestamp")
+            turn["duration_ms"] = int(payload.get("duration_ms") or 0)
+            turn["time_to_first_token_ms"] = int(
+                payload.get("time_to_first_token_ms") or 0
+            )
+            current_turn_id = None
+
+    rendered_turns: list[dict[str, Any]] = []
+    for index, turn_id in enumerate(turn_order):
+        turn = turns[turn_id]
+        usage = turn.get("usage") if isinstance(turn.get("usage"), dict) else {}
+        cached = int(usage.get("cached_input_tokens") or 0)
+        input_tokens = int(usage.get("input_tokens") or 0)
+        rendered_turns.append(
+            {
+                "id": turn_names[index] if index < len(turn_names) else f"turn-{index + 1}",
+                "harness_turn_id": turn_id,
+                "started_at": turn.get("started_at"),
+                "ended_at": turn.get("ended_at"),
+                "duration_ms": int(turn.get("duration_ms") or 0),
+                "time_to_first_token_ms": int(
+                    turn.get("time_to_first_token_ms") or 0
+                ),
+                "usage": {
+                    "input_tokens": input_tokens,
+                    "cached_input_tokens": cached,
+                    "uncached_input_tokens": input_tokens - cached,
+                    "cache_write_input_tokens": int(
+                        usage.get("cache_write_input_tokens") or 0
+                    ),
+                    "output_tokens": int(usage.get("output_tokens") or 0),
+                    "reasoning_output_tokens": int(
+                        usage.get("reasoning_output_tokens") or 0
+                    ),
+                    "total_tokens": int(usage.get("total_tokens") or 0),
+                },
+                "tool_calls": sum(turn.get("tools", {}).values()),
+                "tools": dict(sorted(turn.get("tools", {}).items())),
+            }
+        )
+
+    usage_rows = [turn["usage"] for turn in rendered_turns]
+    token_totals = _sum_fields(
+        usage_rows,
+        (
+            "input_tokens",
+            "cached_input_tokens",
+            "uncached_input_tokens",
+            "cache_write_input_tokens",
+            "output_tokens",
+            "reasoning_output_tokens",
+            "total_tokens",
+        ),
+    )
+    starts = [_timestamp_ms(turn.get("started_at")) for turn in rendered_turns]
+    ends = [_timestamp_ms(turn.get("ended_at")) for turn in rendered_turns]
+    valid_starts = [value for value in starts if value is not None]
+    valid_ends = [value for value in ends if value is not None]
+    wall_time_ms = (
+        max(valid_ends) - min(valid_starts)
+        if valid_starts and valid_ends
+        else sum(turn["duration_ms"] for turn in rendered_turns)
+    )
+    turn_active_ms = sum(turn["duration_ms"] for turn in rendered_turns)
+    model: str | None = None
+    reasoning_effort: str | None = None
+    for turn_id in turn_order:
+        turn = turns[turn_id]
+        if model is None and isinstance(turn.get("model"), str):
+            model = turn["model"]
+        if reasoning_effort is None and isinstance(
+            turn.get("reasoning_effort"), str
+        ):
+            reasoning_effort = turn["reasoning_effort"]
+    return {
+        "source": "codex-native-log",
+        "model": model,
+        "reasoning_effort": reasoning_effort,
+        "harness_version": session_meta.get("cli_version"),
+        "model_provider": session_meta.get("model_provider"),
+        "session": {
+            "started_at": rendered_turns[0].get("started_at") if rendered_turns else None,
+            "ended_at": rendered_turns[-1].get("ended_at") if rendered_turns else None,
+            "wall_time_ms": wall_time_ms,
+            "turn_active_ms": turn_active_ms,
+            "inter_turn_gap_ms": max(0, wall_time_ms - turn_active_ms),
+            "context_window_tokens": context_window_tokens,
+            "peak_context_tokens": peak_context_tokens,
+        },
+        "tokens": token_totals,
+        "turns": rendered_turns,
+        "tools": {
+            "total_calls": sum(tool_totals.values()),
+            "by_name": dict(sorted(tool_totals.items())),
+            "errors": 0,
+        },
+        "model_usage": {},
+        "native_cost_usd": None,
+    }
+
+
+def parse_claude_native_telemetry(
+    session_log: Path, turn_transcripts: list[dict[str, str]]
+) -> dict[str, Any]:
+    """Preserve Claude Code's cache, cost, model, and per-turn result fields."""
+    session_records = _read_json_lines(session_log)
+    timestamps = [
+        timestamp
+        for record in session_records
+        if (timestamp := _timestamp_ms(record.get("timestamp"))) is not None
+    ]
+    rendered_turns: list[dict[str, Any]] = []
+    tool_totals: dict[str, int] = {}
+    model_usage: dict[str, dict[str, Any]] = {}
+    model: str | None = None
+    harness_version: str | None = None
+    tool_errors = 0
+
+    for source_turn in turn_transcripts:
+        records = _parse_json_lines(source_turn["transcript"])
+        result: dict[str, Any] = {}
+        per_turn_tools: dict[str, int] = {}
+        for record in records:
+            if record.get("type") == "system" and record.get("subtype") == "init":
+                if model is None and isinstance(record.get("model"), str):
+                    model = record["model"]
+                if harness_version is None and isinstance(
+                    record.get("claude_code_version"), str
+                ):
+                    harness_version = record["claude_code_version"]
+            if record.get("type") == "assistant":
+                message = record.get("message")
+                content = message.get("content") if isinstance(message, dict) else None
+                if isinstance(content, list):
+                    for block in content:
+                        if not isinstance(block, dict) or block.get("type") != "tool_use":
+                            continue
+                        name = str(block.get("name", "unknown"))
+                        per_turn_tools[name] = per_turn_tools.get(name, 0) + 1
+                        tool_totals[name] = tool_totals.get(name, 0) + 1
+            if record.get("type") == "user":
+                message = record.get("message")
+                content = message.get("content") if isinstance(message, dict) else None
+                if isinstance(content, list):
+                    tool_errors += sum(
+                        1
+                        for block in content
+                        if isinstance(block, dict)
+                        and block.get("type") == "tool_result"
+                        and block.get("is_error") is True
+                    )
+            if record.get("type") == "result":
+                result = record
+
+        usage = result.get("usage") if isinstance(result.get("usage"), dict) else {}
+        result_models = (
+            result.get("modelUsage")
+            if isinstance(result.get("modelUsage"), dict)
+            else {}
+        )
+        for name, values in result_models.items():
+            if not isinstance(values, dict):
+                continue
+            aggregate = model_usage.setdefault(name, {})
+            for field, value in values.items():
+                if not isinstance(value, (int, float)):
+                    continue
+                if field in {"contextWindow", "maxOutputTokens"}:
+                    aggregate[field] = max(aggregate.get(field, 0), value)
+                else:
+                    aggregate[field] = aggregate.get(field, 0) + value
+        rendered_turns.append(
+            {
+                "id": source_turn["id"],
+                "duration_ms": int(result.get("duration_ms") or 0),
+                "api_duration_ms": int(result.get("duration_api_ms") or 0),
+                "model_turns": int(result.get("num_turns") or 0),
+                "usage": {
+                    "input_tokens": int(usage.get("input_tokens") or 0),
+                    "cache_creation_input_tokens": int(
+                        usage.get("cache_creation_input_tokens") or 0
+                    ),
+                    "cache_read_input_tokens": int(
+                        usage.get("cache_read_input_tokens") or 0
+                    ),
+                    "output_tokens": int(usage.get("output_tokens") or 0),
+                },
+                "tool_calls": sum(per_turn_tools.values()),
+                "tools": dict(sorted(per_turn_tools.items())),
+                "native_cost_usd": float(result.get("total_cost_usd") or 0),
+            }
+        )
+
+    usage_rows = [turn["usage"] for turn in rendered_turns]
+    token_totals = _sum_fields(
+        usage_rows,
+        (
+            "input_tokens",
+            "cache_creation_input_tokens",
+            "cache_read_input_tokens",
+            "output_tokens",
+        ),
+    )
+    wall_time_ms = (
+        max(timestamps) - min(timestamps)
+        if timestamps
+        else sum(turn["duration_ms"] for turn in rendered_turns)
+    )
+    turn_active_ms = sum(turn["duration_ms"] for turn in rendered_turns)
+    return {
+        "source": "claude-native-log-and-results",
+        "model": model,
+        "reasoning_effort": None,
+        "harness_version": harness_version,
+        "model_provider": "anthropic",
+        "session": {
+            "started_at": None,
+            "ended_at": None,
+            "wall_time_ms": wall_time_ms,
+            "turn_active_ms": turn_active_ms,
+            "api_time_ms": sum(turn["api_duration_ms"] for turn in rendered_turns),
+            "inter_turn_gap_ms": max(0, wall_time_ms - turn_active_ms),
+            "model_turns": sum(turn["model_turns"] for turn in rendered_turns),
+        },
+        "tokens": token_totals,
+        "turns": rendered_turns,
+        "tools": {
+            "total_calls": sum(tool_totals.values()),
+            "by_name": dict(sorted(tool_totals.items())),
+            "errors": tool_errors,
+        },
+        "model_usage": model_usage,
+        "native_cost_usd": sum(
+            turn["native_cost_usd"] for turn in rendered_turns
+        ),
+    }
+
+
 def build_decant_plan(session_log: Path, evidence_dir: Path) -> dict[str, list[str]]:
     database = evidence_dir / "decant.db"
     exports = evidence_dir / "exports"
@@ -226,6 +588,7 @@ def build_decant_plan(session_log: Path, evidence_dir: Path) -> dict[str, list[s
     return {
         "sync": [*base, "--json", "sync", "--path", str(session_log)],
         "sessions": [*read, "ls", "--limit", "10"],
+        "stats": [*read, "stats", "--by", "model"],
         "economics": [*read, "economics"],
         "files": [*read, "files", "--group", "path", "--limit", "100"],
         "tools": [*read, "tool", "stats", "--limit", "100"],
@@ -542,7 +905,9 @@ def run_verification_commands(workspace: Path, report_dir: Path) -> list[dict[st
     ]
     results: list[dict[str, Any]] = []
     for index, command in enumerate(commands, start=1):
+        started = time.monotonic()
         completed = run_command(command, workspace, 600, check=False)
+        duration_ms = round((time.monotonic() - started) * 1000)
         log = report_dir / "verification" / f"{index:02d}-{command[-1]}.log"
         log.parent.mkdir(parents=True, exist_ok=True)
         log.write_text(completed.stdout + completed.stderr, encoding="utf-8")
@@ -550,6 +915,7 @@ def run_verification_commands(workspace: Path, report_dir: Path) -> list[dict[st
             {
                 "command": command,
                 "returncode": completed.returncode,
+                "duration_ms": duration_ms,
                 "log": log.relative_to(report_dir).as_posix(),
             }
         )
@@ -578,6 +944,7 @@ def run_browser_oracle(workspace: Path, report_dir: Path, port: int) -> dict[str
     oracle_copy = workspace / "output" / "e2e-oracle.mjs"
     oracle_copy.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(ORACLE_PATH, oracle_copy)
+    started = time.monotonic()
     with server_log.open("w", encoding="utf-8") as handle:
         server = subprocess.Popen(
             [
@@ -616,11 +983,38 @@ def run_browser_oracle(workspace: Path, report_dir: Path, port: int) -> dict[str
     return {
         "passed": completed.returncode == 0,
         "returncode": completed.returncode,
+        "duration_ms": round((time.monotonic() - started) * 1000),
         "log": oracle_log.relative_to(report_dir).as_posix(),
         "screenshots": sorted(
             path.relative_to(report_dir).as_posix()
             for path in screenshots.glob("*.png")
         ),
+    }
+
+
+def git_diff_summary(workspace: Path, base_ref: str) -> dict[str, Any]:
+    rows: list[dict[str, Any]] = []
+    additions = 0
+    deletions = 0
+    output = git_output(workspace, "diff", "--numstat", f"{base_ref}...HEAD")
+    for line in output.splitlines():
+        added, deleted, path = line.split("\t", 2)
+        numeric_added = int(added) if added.isdigit() else 0
+        numeric_deleted = int(deleted) if deleted.isdigit() else 0
+        additions += numeric_added
+        deletions += numeric_deleted
+        rows.append(
+            {
+                "path": path,
+                "additions": numeric_added,
+                "deletions": numeric_deleted,
+            }
+        )
+    return {
+        "files": len(rows),
+        "additions": additions,
+        "deletions": deletions,
+        "paths": rows,
     }
 
 
@@ -652,6 +1046,7 @@ def run_decant(session_log: Path, evidence_dir: Path) -> dict[str, Any]:
     evidence_dir.mkdir(parents=True, exist_ok=True)
     plan = build_decant_plan(session_log, evidence_dir)
     outputs: dict[str, str] = {}
+    datasets: dict[str, Any] = {}
     sync = run_command(plan["sync"], ROOT, 600, check=False)
     (evidence_dir / "sync.json").write_text(
         sync.stdout + sync.stderr, encoding="utf-8"
@@ -668,11 +1063,12 @@ def run_decant(session_log: Path, evidence_dir: Path) -> dict[str, Any]:
         )
     decant_session_id = str(rows[0]["id"])
 
-    for name in ("economics", "files", "tools", "mcp"):
+    for name in ("stats", "economics", "files", "tools", "mcp"):
         completed = run_command(plan[name], ROOT, 300)
         output = evidence_dir / f"{name}.json"
         output.write_text(completed.stdout, encoding="utf-8")
         outputs[name] = output.name
+        datasets[name] = json.loads(completed.stdout)
 
     for name in ("trajectory", "session_json", "replay"):
         command = [
@@ -681,22 +1077,126 @@ def run_decant(session_log: Path, evidence_dir: Path) -> dict[str, Any]:
         ]
         run_command(command, ROOT, 300)
 
+    files = datasets.get("files") if isinstance(datasets.get("files"), list) else []
+    sync_payload = json.loads(sync.stdout) if sync.stdout.strip() else {}
     return {
         "version": DECANT_VERSION,
         "source_log": str(session_log),
         "session_id": decant_session_id,
         "session": rows[0],
         "outputs": outputs,
+        "stats": datasets.get("stats", []),
+        "economics": datasets.get("economics", {}),
+        "tools": datasets.get("tools", []),
+        "mcp": datasets.get("mcp", []),
+        "files": {
+            "rows": len(files),
+            "reads": sum(int(item.get("reads") or 0) for item in files),
+            "edits": sum(int(item.get("edits") or 0) for item in files),
+            "writes": sum(int(item.get("writes") or 0) for item in files),
+            "deletes": sum(int(item.get("deletes") or 0) for item in files),
+            "top_paths": [
+                {
+                    "path": item.get("key"),
+                    "reads": int(item.get("reads") or 0),
+                    "edits": int(item.get("edits") or 0),
+                    "writes": int(item.get("writes") or 0),
+                }
+                for item in files[:10]
+            ],
+        },
+        "ingest": {
+            "issues": int(sync_payload.get("issues") or 0),
+            "issues_by_code": sync_payload.get("issues_by_code", {}),
+            "failed": int(sync_payload.get("failed") or 0),
+        },
         "trajectory": f"exports/{decant_session_id}.trajectory.json",
         "session_json": f"exports/{decant_session_id}.json",
         "replay": "replay.sh",
     }
 
 
+def _format_number(value: Any) -> str:
+    return f"{int(value or 0):,}"
+
+
+def _format_duration(milliseconds: Any) -> str:
+    total_ms = int(milliseconds or 0)
+    minutes, remainder = divmod(total_ms, 60_000)
+    seconds = remainder / 1000
+    if minutes:
+        return f"{minutes}m {seconds:04.1f}s"
+    return f"{seconds:.1f}s"
+
+
+def _format_cost(value: Any) -> str:
+    return "not reported" if value is None else f"${float(value):.4f}"
+
+
+def _append_table(
+    lines: list[str], headers: list[str], rows: list[list[str]]
+) -> None:
+    if not rows:
+        lines.append("No rows reported.")
+        return
+    lines.append("| " + " | ".join(headers) + " |")
+    lines.append("| " + " | ".join("---" for _ in headers) + " |")
+    lines.extend("| " + " | ".join(row) + " |" for row in rows)
+
+
+def _usage_discrepancies(report: dict[str, Any]) -> list[str]:
+    native = report.get("native")
+    decant = report.get("decant")
+    if not isinstance(native, dict) or not isinstance(decant, dict):
+        return []
+    native_tokens = native.get("tokens", {})
+    decant_session = decant.get("session", {})
+    differences: list[str] = []
+    native_output = int(native_tokens.get("output_tokens") or 0)
+    decant_output = int(decant_session.get("total_output_tokens") or 0)
+    if native_output != decant_output:
+        differences.append(
+            f"output tokens: native {_format_number(native_output)} vs "
+            f"Decant {_format_number(decant_output)}"
+        )
+    native_input_key = (
+        "uncached_input_tokens"
+        if report.get("harness") == "codex"
+        else "input_tokens"
+    )
+    native_input = int(native_tokens.get(native_input_key) or 0)
+    decant_input = int(decant_session.get("total_input_tokens") or 0)
+    if native_input != decant_input:
+        differences.append(
+            f"direct input tokens: native {_format_number(native_input)} vs "
+            f"Decant {_format_number(decant_input)}"
+        )
+    native_cost = native.get("native_cost_usd")
+    decant_cost = decant_session.get("estimated_cost_usd")
+    if native_cost is not None and decant_cost is not None:
+        if abs(float(native_cost) - float(decant_cost)) >= 0.0001:
+            differences.append(
+                f"cost: native {_format_cost(native_cost)} vs "
+                f"Decant estimate {_format_cost(decant_cost)}"
+            )
+    return differences
+
+
 def write_report(report_dir: Path, report: dict[str, Any]) -> None:
     report_dir.mkdir(parents=True, exist_ok=True)
     (report_dir / "report.json").write_text(
         json.dumps(report, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+    native = report.get("native") if isinstance(report.get("native"), dict) else {}
+    native_session = (
+        native.get("session") if isinstance(native.get("session"), dict) else {}
+    )
+    native_tokens = (
+        native.get("tokens") if isinstance(native.get("tokens"), dict) else {}
+    )
+    decant = report.get("decant") if isinstance(report.get("decant"), dict) else {}
+    decant_session = (
+        decant.get("session") if isinstance(decant.get("session"), dict) else {}
     )
     lines = [
         f"# {report['harness'].title()} lifecycle evaluation",
@@ -705,31 +1205,302 @@ def write_report(report_dir: Path, report: dict[str, Any]) -> None:
         f"- Session: `{report.get('session_id', 'unavailable')}`",
         f"- Branch: `{report['branch']}`",
         f"- Draft PR: {report.get('pull_request', {}).get('url', 'missing')}",
-        f"- Decant: {report.get('decant', {}).get('version', 'not-run')}",
+        f"- Decant: {decant.get('version', 'not-run')}",
         "",
-        "## Gates",
+        "## Runtime and models",
         "",
     ]
+    _append_table(
+        lines,
+        ["Measure", "Value"],
+        [
+            ["Harness version", f"`{native.get('harness_version', 'unknown')}`"],
+            ["Native model", f"`{native.get('model', 'unknown')}`"],
+            [
+                "Reasoning effort",
+                f"`{native.get('reasoning_effort') or 'not exposed'}`",
+            ],
+            ["Session wall time", _format_duration(native_session.get("wall_time_ms"))],
+            ["Turn-active time", _format_duration(native_session.get("turn_active_ms"))],
+            ["Inter-turn gap", _format_duration(native_session.get("inter_turn_gap_ms"))],
+            ["Messages parsed by Decant", _format_number(decant_session.get("message_count"))],
+            [
+                "Context window / peak",
+                f"{_format_number(decant_session.get('context_window_tokens') or native_session.get('context_window_tokens'))} / "
+                f"{_format_number(decant_session.get('peak_context_tokens') or native_session.get('peak_context_tokens'))}",
+            ],
+            ["Compactions", _format_number(decant_session.get("compaction_count"))],
+            ["Subagents", _format_number(decant_session.get("subagent_count"))],
+        ],
+    )
+    model_usage = native.get("model_usage")
+    if isinstance(model_usage, dict) and model_usage:
+        lines.extend(["", "Native per-model usage:", ""])
+        _append_table(
+            lines,
+            ["Model", "Input", "Cache read", "Cache write", "Output", "Cost"],
+            [
+                [
+                    f"`{name}`",
+                    _format_number(values.get("inputTokens")),
+                    _format_number(values.get("cacheReadInputTokens")),
+                    _format_number(values.get("cacheCreationInputTokens")),
+                    _format_number(values.get("outputTokens")),
+                    _format_cost(values.get("costUSD")),
+                ]
+                for name, values in model_usage.items()
+                if isinstance(values, dict)
+            ],
+        )
+
+    lines.extend(["", "## Native token accounting", ""])
+    token_rows = [
+        [label, _format_number(native_tokens.get(field))]
+        for field, label in (
+            ("input_tokens", "Input tokens reported"),
+            ("cached_input_tokens", "Cached input tokens"),
+            ("uncached_input_tokens", "Uncached input tokens"),
+            ("cache_creation_input_tokens", "Cache creation input tokens"),
+            ("cache_read_input_tokens", "Cache read input tokens"),
+            ("output_tokens", "Output tokens"),
+            ("reasoning_output_tokens", "Reasoning output tokens"),
+        )
+        if field in native_tokens
+    ]
+    _append_table(lines, ["Token measure", "Native total"], token_rows)
+    lines.extend(
+        [
+            "",
+            f"Native harness cost: **{_format_cost(native.get('native_cost_usd'))}**. "
+            f"Decant estimate: **{_format_cost(decant_session.get('estimated_cost_usd'))}**.",
+        ]
+    )
+    decant_stats = decant.get("stats") if isinstance(decant.get("stats"), list) else []
+    if decant_stats:
+        lines.append(
+            "Decant model rollup: "
+            + ", ".join(
+                f"`{item.get('key', 'unknown')}` with "
+                f"{_format_number(item.get('reasoning_tokens'))} reported and "
+                f"{_format_number(item.get('est_reasoning_tokens'))} estimated reasoning tokens"
+                for item in decant_stats
+            )
+            + "."
+        )
+    differences = _usage_discrepancies(report)
+    if differences:
+        lines.append(
+            "**Caution: Decant differs from native telemetry** - "
+            + "; ".join(differences)
+            + "."
+        )
+
+    lines.extend(["", "## Per-turn telemetry", ""])
+    turn_rows: list[list[str]] = []
+    for turn in native.get("turns", []):
+        usage = turn.get("usage", {})
+        cache_read = usage.get(
+            "cached_input_tokens", usage.get("cache_read_input_tokens", 0)
+        )
+        cache_write = usage.get(
+            "cache_write_input_tokens", usage.get("cache_creation_input_tokens", 0)
+        )
+        turn_rows.append(
+            [
+                str(turn.get("id", "unknown")),
+                _format_duration(turn.get("duration_ms")),
+                _format_duration(turn.get("api_duration_ms"))
+                if "api_duration_ms" in turn
+                else "n/a",
+                _format_number(turn.get("model_turns"))
+                if "model_turns" in turn
+                else "n/a",
+                _format_number(usage.get("input_tokens")),
+                _format_number(cache_read),
+                _format_number(cache_write),
+                _format_number(usage.get("output_tokens")),
+                _format_number(usage.get("reasoning_output_tokens"))
+                if "reasoning_output_tokens" in usage
+                else "n/a",
+                _format_number(turn.get("tool_calls")),
+                _format_cost(turn.get("native_cost_usd"))
+                if "native_cost_usd" in turn
+                else "n/a",
+            ]
+        )
+    _append_table(
+        lines,
+        [
+            "Stage",
+            "Wall",
+            "API",
+            "Model turns",
+            "Input",
+            "Cache read",
+            "Cache write",
+            "Output",
+            "Reasoning",
+            "Tools",
+            "Native cost",
+        ],
+        turn_rows,
+    )
+
+    lines.extend(["", "## Tool calls", ""])
+    native_tools = native.get("tools", {})
+    lines.append(
+        f"Native log: **{_format_number(native_tools.get('total_calls'))} calls**, "
+        f"**{_format_number(native_tools.get('errors'))} errors**."
+    )
+    _append_table(
+        lines,
+        ["Native tool", "Calls"],
+        [
+            [name, _format_number(calls)]
+            for name, calls in native_tools.get("by_name", {}).items()
+        ],
+    )
+    decant_tools = decant.get("tools") if isinstance(decant.get("tools"), list) else []
+    lines.extend(["", "Decant latency view:", ""])
+    _append_table(
+        lines,
+        ["Decant tool", "Calls", "Errors", "p50", "p95"],
+        [
+            [
+                str(item.get("tool_name", "unknown")),
+                _format_number(item.get("calls")),
+                _format_number(item.get("errors")),
+                f"{_format_number(item.get('p50_ms'))} ms",
+                f"{_format_number(item.get('p95_ms'))} ms",
+            ]
+            for item in decant_tools
+        ],
+    )
+    mcp = decant.get("mcp") if isinstance(decant.get("mcp"), list) else []
+    lines.append(f"\nMCP calls recorded by Decant: **{sum(int(item.get('calls') or 0) for item in mcp)}**.")
+
+    economics = decant.get("economics")
+    if isinstance(economics, dict):
+        lines.extend(["", "## Decant economics and time attribution", ""])
+        buckets = economics.get("buckets") if isinstance(economics.get("buckets"), list) else []
+        _append_table(
+            lines,
+            ["Bucket", "Generation", "Context", "Calls", "Active", "Cost", "Share"],
+            [
+                [
+                    str(bucket.get("bucket", "unknown")),
+                    _format_number(bucket.get("generation_tokens")),
+                    _format_number(bucket.get("context_window_tokens")),
+                    _format_number(bucket.get("tool_calls")),
+                    _format_duration(bucket.get("active_ms")),
+                    _format_cost(bucket.get("estimated_cost_usd")),
+                    f"{float(bucket.get('cost_share') or 0) * 100:.1f}%",
+                ]
+                for bucket in buckets
+            ],
+        )
+        totals = economics.get("totals") if isinstance(economics.get("totals"), dict) else {}
+        lines.append(
+            "\nDecant attributed "
+            f"{_format_duration(totals.get('active_ms'))} active and "
+            f"{_format_duration(totals.get('waiting_on_user_ms'))} waiting on the user. "
+            "These are attribution estimates and can overlap wall-clock intervals."
+        )
+        phases = totals.get("phases") if isinstance(totals.get("phases"), dict) else {}
+        if phases:
+            lines.extend(["", "Decant phase attribution:", ""])
+            _append_table(
+                lines,
+                ["Phase", "Generation", "Context", "Active", "Cost"],
+                [
+                    [
+                        str(name),
+                        _format_number(values.get("generation_tokens")),
+                        _format_number(values.get("context_window_tokens")),
+                        _format_duration(values.get("active_ms")),
+                        _format_cost(values.get("estimated_cost_usd")),
+                    ]
+                    for name, values in phases.items()
+                    if isinstance(values, dict)
+                ],
+            )
+            implementation = phases.get("implementation")
+            if isinstance(implementation, dict) and not int(
+                implementation.get("generation_tokens") or 0
+            ):
+                lines.append(
+                    "\nDecant assigned zero generation tokens to implementation; "
+                    "do not use its phase split for this run."
+                )
+
+    files = decant.get("files") if isinstance(decant.get("files"), dict) else {}
+    lines.extend(["", "## File activity", ""])
+    lines.append(
+        "Decant emitted "
+        f"**{_format_number(files.get('rows'))} path rows**: "
+        f"{_format_number(files.get('reads'))} reads, "
+        f"{_format_number(files.get('edits'))} edits, "
+        f"{_format_number(files.get('writes'))} writes, and "
+        f"{_format_number(files.get('deletes'))} deletes."
+    )
+
+    lines.extend(["", "## Gates", ""])
     for gate in report.get("gates", []):
         lines.append(
             f"- {gate['id']}: {'PASS' if gate['passed'] else 'FAIL'}"
             + (f" ({'; '.join(gate['failures'])})" if gate["failures"] else "")
         )
-    lines.extend(
-        [
-            "",
-            "## Verification",
-            "",
-            *[
-                f"- `{' '.join(item['command'])}`: exit {item['returncode']}"
-                for item in report.get("verification", [])
-            ],
-            f"- Browser oracle: {'PASS' if report.get('browser', {}).get('passed') else 'FAIL'}",
-            "",
-            "Transcripts and Decant exports are local evidence and must not be committed.",
-            "",
-        ]
+    corrections = report.get("evaluation_corrections")
+    if isinstance(corrections, list) and corrections:
+        lines.extend(["", "Evaluation corrections:"])
+        lines.extend(f"- {correction}" for correction in corrections)
+    lines.extend(["", "## Independent verification", ""])
+    for item in report.get("verification", []):
+        duration = (
+            f" in {_format_duration(item.get('duration_ms'))}"
+            if "duration_ms" in item
+            else ""
+        )
+        lines.append(
+            f"- `{' '.join(item['command'])}`: exit {item['returncode']}{duration}"
+        )
+    browser = report.get("browser", {})
+    lines.append(
+        f"- Browser oracle: {'PASS' if browser.get('passed') else 'FAIL'}"
+        + (
+            f" in {_format_duration(browser.get('duration_ms'))}"
+            if "duration_ms" in browser
+            else ""
+        )
     )
+    for screenshot in browser.get("screenshots", []):
+        lines.append(f"- Screenshot: `{screenshot}`")
+
+    product_diff = report.get("product_diff")
+    if isinstance(product_diff, dict):
+        lines.extend(["", "## Delivery footprint", ""])
+        lines.append(
+            f"Product diff: **{_format_number(product_diff.get('files'))} files**, "
+            f"**+{_format_number(product_diff.get('additions'))}"
+            f"/-{_format_number(product_diff.get('deletions'))}**."
+        )
+
+    ingest = decant.get("ingest") if isinstance(decant.get("ingest"), dict) else {}
+    lines.extend(["", "## Interpretation limits", ""])
+    lines.append(
+        f"- Decant ingest issues: {_format_number(ingest.get('issues'))}; "
+        f"failed records: {_format_number(ingest.get('failed'))}."
+    )
+    lines.append(
+        "- Cost is an estimate unless the native harness reports a cost; subscription billing is not inferred."
+    )
+    lines.append(
+        "- Native and Decant token fields have different cache semantics; use the discrepancy callout above before comparing harnesses."
+    )
+    lines.append(
+        "- Transcripts, Decant databases, exports, and screenshots are local evidence and must not be committed."
+    )
+    lines.append("")
     (report_dir / "report.md").write_text("\n".join(lines), encoding="utf-8")
 
 
@@ -810,6 +1581,7 @@ def main() -> int:
         environment = harness_environment(report_dir)
 
         session_id = str(uuid.uuid4()) if args.harness == "claude" else None
+        turn_transcripts: list[dict[str, str]] = []
         for turn_number, turn in enumerate(scenario["turns"], start=1):
             session_id, transcript, assistant_text = run_turn(
                 args.harness,
@@ -822,6 +1594,7 @@ def main() -> int:
                 git_common,
                 environment,
             )
+            turn_transcripts.append({"id": turn["id"], "transcript": transcript})
             report["session_id"] = session_id
             artifact_paths = copy_checkpoint_artifacts(
                 workspace, report_dir, turn_number, turn["id"]
@@ -853,6 +1626,7 @@ def main() -> int:
         report["pull_request"] = pull_request
         final_head = git_output(workspace, "rev-parse", "HEAD")
         report["final_head"] = final_head
+        report["product_diff"] = git_diff_summary(workspace, args.base_ref)
         publication_failures = []
         if not pull_request["isDraft"]:
             publication_failures.append("PR is not draft")
@@ -875,10 +1649,16 @@ def main() -> int:
             }
         )
 
-        if not args.skip_decant:
-            session_log = find_session_log(
-                args.harness, session_id, Path.home()
+        session_log = find_session_log(args.harness, session_id, Path.home())
+        if args.harness == "codex":
+            report["native"] = parse_codex_native_telemetry(
+                session_log, [turn["id"] for turn in scenario["turns"]]
             )
+        else:
+            report["native"] = parse_claude_native_telemetry(
+                session_log, turn_transcripts
+            )
+        if not args.skip_decant:
             report["decant"] = run_decant(session_log, report_dir / "decant")
 
         report["passed"] = all(gate["passed"] for gate in report["gates"])

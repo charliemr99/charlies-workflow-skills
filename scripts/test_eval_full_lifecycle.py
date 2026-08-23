@@ -180,11 +180,309 @@ class EvalFullLifecycleTests(unittest.TestCase):
         rendered = "\n".join(" ".join(command) for command in plan.values())
         self.assertIn("@dosu/decant@0.4.0", rendered)
         self.assertIn("sync --path /tmp/session.jsonl", rendered)
+        self.assertIn("stats --by model", rendered)
         self.assertIn("economics", plan)
         self.assertIn("files", plan)
         self.assertIn("tools", plan)
         self.assertIn("trajectory", plan)
         self.assertIn("session_json", plan)
+
+    def test_codex_native_telemetry_sums_each_resumed_turn(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            log = Path(directory) / "codex.jsonl"
+            records = [
+                {
+                    "type": "session_meta",
+                    "payload": {
+                        "cli_version": "1.2.3",
+                        "model_provider": "openai",
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-08-23T01:00:00.000Z",
+                    "payload": {
+                        "type": "task_started",
+                        "turn_id": "turn-a",
+                    },
+                },
+                {
+                    "type": "turn_context",
+                    "payload": {
+                        "turn_id": "turn-a",
+                        "model": "gpt-test",
+                        "effort": "xhigh",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "custom_tool_call",
+                        "input": "await tools.exec_command({cmd: 'git status'});",
+                        "internal_chat_message_metadata_passthrough": {
+                            "turn_id": "turn-a"
+                        },
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "token_count",
+                        "info": {
+                            "total_token_usage": {
+                                "input_tokens": 100,
+                                "cached_input_tokens": 80,
+                                "output_tokens": 20,
+                                "reasoning_output_tokens": 5,
+                                "total_tokens": 120,
+                            },
+                            "last_token_usage": {"input_tokens": 70},
+                            "model_context_window": 1000,
+                        },
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-08-23T01:00:01.000Z",
+                    "payload": {
+                        "type": "task_complete",
+                        "turn_id": "turn-a",
+                        "duration_ms": 1000,
+                        "time_to_first_token_ms": 100,
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-08-23T01:00:02.000Z",
+                    "payload": {
+                        "type": "task_started",
+                        "turn_id": "turn-b",
+                    },
+                },
+                {
+                    "type": "turn_context",
+                    "payload": {
+                        "turn_id": "turn-b",
+                        "model": "gpt-test",
+                        "effort": "xhigh",
+                    },
+                },
+                {
+                    "type": "response_item",
+                    "payload": {
+                        "type": "custom_tool_call",
+                        "input": "await tools.apply_patch('patch');",
+                        "internal_chat_message_metadata_passthrough": {
+                            "turn_id": "turn-b"
+                        },
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "token_count",
+                        "info": {
+                            "total_token_usage": {
+                                "input_tokens": 200,
+                                "cached_input_tokens": 150,
+                                "output_tokens": 30,
+                                "reasoning_output_tokens": 7,
+                                "total_tokens": 230,
+                            },
+                            "last_token_usage": {"input_tokens": 90},
+                            "model_context_window": 1000,
+                        },
+                    },
+                },
+                {
+                    "type": "event_msg",
+                    "timestamp": "2026-08-23T01:00:04.000Z",
+                    "payload": {
+                        "type": "task_complete",
+                        "turn_id": "turn-b",
+                        "duration_ms": 2000,
+                        "time_to_first_token_ms": 200,
+                    },
+                },
+            ]
+            log.write_text(
+                "\n".join(json.dumps(record) for record in records) + "\n",
+                encoding="utf-8",
+            )
+
+            telemetry = EVAL.parse_codex_native_telemetry(
+                log, ["discovery", "delivery"]
+            )
+
+            self.assertEqual(telemetry["model"], "gpt-test")
+            self.assertEqual(telemetry["reasoning_effort"], "xhigh")
+            self.assertEqual(telemetry["tokens"]["input_tokens"], 300)
+            self.assertEqual(telemetry["tokens"]["cached_input_tokens"], 230)
+            self.assertEqual(telemetry["tokens"]["uncached_input_tokens"], 70)
+            self.assertEqual(telemetry["tokens"]["output_tokens"], 50)
+            self.assertEqual(telemetry["tokens"]["reasoning_output_tokens"], 12)
+            self.assertEqual(telemetry["tools"]["total_calls"], 2)
+            self.assertEqual(
+                telemetry["tools"]["by_name"],
+                {"apply_patch": 1, "exec_command": 1},
+            )
+            self.assertEqual(
+                [turn["id"] for turn in telemetry["turns"]],
+                ["discovery", "delivery"],
+            )
+            self.assertEqual(telemetry["session"]["wall_time_ms"], 4000)
+            self.assertEqual(telemetry["session"]["turn_active_ms"], 3000)
+
+    def test_claude_native_telemetry_preserves_cache_and_model_usage(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            session_log = Path(directory) / "claude.jsonl"
+            session_log.write_text(
+                "\n".join(
+                    [
+                        json.dumps(
+                            {
+                                "type": "user",
+                                "timestamp": "2026-08-23T02:00:00.000Z",
+                            }
+                        ),
+                        json.dumps(
+                            {
+                                "type": "assistant",
+                                "timestamp": "2026-08-23T02:00:05.000Z",
+                            }
+                        ),
+                    ]
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+            transcript = "\n".join(
+                [
+                    json.dumps(
+                        {
+                            "type": "system",
+                            "subtype": "init",
+                            "model": "claude-main[1m]",
+                            "claude_code_version": "2.3.4",
+                        }
+                    ),
+                    json.dumps(
+                        {
+                            "type": "assistant",
+                            "message": {
+                                "content": [
+                                    {
+                                        "type": "tool_use",
+                                        "name": "Read",
+                                        "input": {},
+                                    }
+                                ]
+                            },
+                        }
+                    ),
+                    json.dumps(
+                        {
+                            "type": "result",
+                            "duration_ms": 4800,
+                            "duration_api_ms": 4200,
+                            "num_turns": 3,
+                            "total_cost_usd": 0.25,
+                            "usage": {
+                                "input_tokens": 2,
+                                "cache_creation_input_tokens": 100,
+                                "cache_read_input_tokens": 900,
+                                "output_tokens": 40,
+                            },
+                            "modelUsage": {
+                                "claude-main[1m]": {
+                                    "inputTokens": 2,
+                                    "outputTokens": 40,
+                                    "costUSD": 0.24,
+                                },
+                                "claude-helper": {
+                                    "inputTokens": 3,
+                                    "outputTokens": 1,
+                                    "costUSD": 0.01,
+                                },
+                            },
+                        }
+                    ),
+                ]
+            )
+
+            telemetry = EVAL.parse_claude_native_telemetry(
+                session_log,
+                [{"id": "discovery", "transcript": transcript}],
+            )
+
+            self.assertEqual(telemetry["model"], "claude-main[1m]")
+            self.assertEqual(telemetry["harness_version"], "2.3.4")
+            self.assertEqual(telemetry["tokens"]["input_tokens"], 2)
+            self.assertEqual(
+                telemetry["tokens"]["cache_creation_input_tokens"], 100
+            )
+            self.assertEqual(
+                telemetry["tokens"]["cache_read_input_tokens"], 900
+            )
+            self.assertEqual(telemetry["tokens"]["output_tokens"], 40)
+            self.assertEqual(telemetry["native_cost_usd"], 0.25)
+            self.assertEqual(telemetry["tools"]["by_name"], {"Read": 1})
+            self.assertEqual(telemetry["session"]["wall_time_ms"], 5000)
+            self.assertIn("claude-helper", telemetry["model_usage"])
+
+    def test_report_surfaces_native_decant_and_tool_discrepancies(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            report_dir = Path(directory)
+            report = {
+                "harness": "codex",
+                "passed": True,
+                "session_id": "session-1",
+                "branch": "e2e/codex-test",
+                "gates": [],
+                "verification": [],
+                "browser": {"passed": True, "screenshots": []},
+                "native": {
+                    "model": "gpt-test",
+                    "reasoning_effort": "xhigh",
+                    "harness_version": "1.2.3",
+                    "session": {"wall_time_ms": 1000},
+                    "tokens": {
+                        "input_tokens": 300,
+                        "cached_input_tokens": 230,
+                        "uncached_input_tokens": 70,
+                        "output_tokens": 50,
+                        "reasoning_output_tokens": 12,
+                    },
+                    "turns": [],
+                    "tools": {
+                        "total_calls": 2,
+                        "by_name": {"exec_command": 1, "apply_patch": 1},
+                    },
+                    "native_cost_usd": None,
+                },
+                "decant": {
+                    "version": "0.4.0",
+                    "session": {
+                        "message_count": 10,
+                        "total_input_tokens": 70,
+                        "total_output_tokens": 30,
+                        "estimated_cost_usd": 1.0,
+                    },
+                    "economics": {"totals": {"active_ms": 900}},
+                    "tools": [],
+                    "mcp": [],
+                    "ingest": {"issues": 0, "issues_by_code": {}},
+                },
+            }
+
+            EVAL.write_report(report_dir, report)
+            rendered = (report_dir / "report.md").read_text(encoding="utf-8")
+
+            self.assertIn("## Runtime and models", rendered)
+            self.assertIn("## Native token accounting", rendered)
+            self.assertIn("## Tool calls", rendered)
+            self.assertIn("gpt-test", rendered)
+            self.assertIn("Decant differs from native", rendered)
 
     def test_harness_environment_disables_shell_profile_identity_overrides(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
