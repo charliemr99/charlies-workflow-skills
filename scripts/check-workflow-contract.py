@@ -351,7 +351,8 @@ def main() -> None:
     require_text(
         ROOT / "docs" / "compatibility.md",
         [
-            "real Codex, Claude Code, and Cursor lifecycle runs are pending",
+            "Real Codex and Claude Code lifecycle runs have been measured",
+            "Cursor",
             "Hallmark network and third-party asset boundary",
             "deterministic-contract-fixture",
             "model-driven-smoke-evaluation",
@@ -368,6 +369,7 @@ def main() -> None:
             "test_check_skill_relationships.py",
             "test_skill_package.py",
             "test_check_lifecycle_proof.py",
+            "test_eval_full_lifecycle.py",
             "check-skill-relationships.py",
             "check-lifecycle-proof.py",
             "skills-ref==0.1.1",
@@ -442,6 +444,33 @@ def main() -> None:
             "model-driven-smoke-evaluation",
         ],
     )
+    full_lifecycle = json.loads(
+        (ROOT / "evals" / "charlies-workflow-full-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if full_lifecycle.get("evidence_boundary") != "real-harness-lifecycle-evaluation":
+        raise AssertionError("Real lifecycle evidence boundary is missing")
+    if [turn.get("expected_phase") for turn in full_lifecycle.get("turns", [])] != [
+        "awaiting-discovery-answer",
+        "awaiting-spec-approval",
+        "plan-ready",
+        "published",
+    ]:
+        raise AssertionError("Real lifecycle checkpoints are missing or out of order")
+    if not full_lifecycle.get("publication", {}).get("draft_only"):
+        raise AssertionError("Real lifecycle publication must remain draft-only")
+    require_text(
+        ROOT / "scripts" / "eval-full-lifecycle.py",
+        [
+            "real-harness-lifecycle-evaluation",
+            "run-state.json",
+            "has_temporary_artifacts",
+            "run_browser_oracle",
+            "find_draft_pr",
+            "@dosu/decant@",
+        ],
+    )
     lifecycle = json.loads(
         (ROOT / "evals" / "deterministic-lifecycle.json").read_text(
             encoding="utf-8"
@@ -473,14 +502,24 @@ def main() -> None:
         CHARLIE / "agents" / "openai.yaml",
         ROOT / "README.md",
         ROOT / "docs" / "compatibility.md",
+        ROOT / "docs" / "e2e-validation.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
+        ROOT / "evals" / "charlies-workflow-full-lifecycle.json",
         ROOT / "evals" / "deterministic-lifecycle.json",
+        ROOT / "evals" / "oracles" / "feedback-inbox.mjs",
+        *(
+            path
+            for path in (ROOT / "evals" / "fixtures" / "feedback-inbox").rglob("*")
+            if path.is_file()
+        ),
         ROOT / "scripts" / "check-workflow-contract.py",
         ROOT / "scripts" / "test_check_workflow_contract.py",
         ROOT / "scripts" / "check-lifecycle-proof.py",
         ROOT / "scripts" / "test_check_lifecycle_proof.py",
         ROOT / "scripts" / "eval-workflow.py",
         ROOT / "scripts" / "test_eval_workflow.py",
+        ROOT / "scripts" / "eval-full-lifecycle.py",
+        ROOT / "scripts" / "test_eval_full_lifecycle.py",
         ROOT / "scripts" / "skill_relationships.py",
         ROOT / "scripts" / "check-skill-relationships.py",
         ROOT / "scripts" / "test_check_skill_relationships.py",

@@ -147,10 +147,18 @@ not edit the spec, acceptance criteria, or plan.
 ## Temporary State and Artifacts
 
 For Medium and Complex work, copy
-`assets/run-state-template.json` into the current run directory, normally
-`output/workflow/<run-id>/`. Verify that location is ignored before writing. If
-the repository has no ignored workflow location, use an OS temporary directory
-instead of changing `.gitignore` solely for workflow artifacts.
+`assets/run-state-template.json` to `run-state.json` in the current run
+directory, normally `output/workflow/<run-id>/`. Verify that location is ignored
+before writing. If the repository has no ignored workflow location, use an OS
+temporary directory instead of changing `.gitignore` solely for workflow
+artifacts. Do not substitute `.agents/`, `.claude/`, or another ignored folder
+when the canonical `output/workflow/` location is available.
+
+For Medium and Complex work, Ground and Route has not passed until that file
+exists, parses, and records `phase` as `discovery`. Do not read the Discover and
+Spec action or ask discovery questions before verifying this observable state.
+A request not to edit source or configuration does not prohibit ignored
+workflow state.
 
 Update state only after the relevant Exit Test passes. The spec, plan, review
 notes, state, and necessary evidence are execution aids. Retain them through
@@ -168,6 +176,11 @@ Production edits are blocked until the selected track and tier are recorded,
 discovery is complete, the proportional spec is approved or explicitly
 `not-required` under the complete Small-request rule, and the separate plan is
 ready or explicitly not-required.
+
+For Medium and Complex work, discovery itself is blocked until
+`output/workflow/<run-id>/run-state.json` exists and records `phase` as
+`discovery` (or the equivalent verified OS-temporary path when no ignored
+workflow location exists).
 
 Publication is blocked until:
 
