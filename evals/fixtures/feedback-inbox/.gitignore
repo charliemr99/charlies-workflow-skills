@@ -1,0 +1,8 @@
+node_modules/
+dist/
+playwright-report/
+test-results/
+.agents/
+.claude/
+output/
+.DS_Store

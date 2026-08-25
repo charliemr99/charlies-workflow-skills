@@ -8,8 +8,8 @@ import json
 import os
 import re
 import shlex
-import shutil
 import subprocess
+import sys
 import tempfile
 from datetime import datetime, timezone
 from pathlib import Path
@@ -18,7 +18,6 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES_PATH = ROOT / "evals" / "charlies-workflow-cases.json"
-SKILL_PATH = ROOT / "skills" / "charlies-workflow"
 TEMPORARY_OUTPUT_PREFIXES = ("output/workflow/",)
 PHASE_PATTERNS = {
     "awaiting-discovery-answer": r"(?i)(question|pregunta|clarif|decision|decisi)",
@@ -26,6 +25,16 @@ PHASE_PATTERNS = {
     "plan-ready": r"(?i)(implementation plan|plan de implementaci)",
 }
 EVIDENCE_BOUNDARY = "model-driven-smoke-evaluation"
+CLAUDE_SKILL_SYSTEM_PROMPT = (
+    "The user explicitly invoked the project-scoped charlies-workflow skill. "
+    "Before any task action, load charlies-workflow with the Skill tool and "
+    "follow it for the entire session."
+)
+INVOCATIONS = {
+    "codex": "$charlies-workflow",
+    "claude": "/charlies-workflow",
+    "custom": "$charlies-workflow",
+}
 
 
 def load_cases() -> list[dict[str, Any]]:
@@ -69,6 +78,29 @@ def run_checked(command: list[str], cwd: Path) -> None:
     )
 
 
+def render_prompt(harness: str, prompt: str) -> str:
+    return prompt.replace("{{workflow}}", INVOCATIONS[harness])
+
+
+def install_workflow(workspace: Path, harness: str) -> None:
+    run_checked(
+        [
+            sys.executable,
+            str(ROOT / "scripts" / "skill-package.py"),
+            "install",
+            "--scope",
+            "project",
+            "--project-dir",
+            str(workspace),
+            "--harness",
+            harness,
+            "--skill",
+            "charlies-workflow",
+        ],
+        ROOT,
+    )
+
+
 def create_fixture(
     harness: str, install_skill: bool = True
 ) -> tuple[tempfile.TemporaryDirectory[str], Path]:
@@ -91,11 +123,7 @@ def create_fixture(
     (workspace / ".gitignore").write_text("output/\n", encoding="utf-8")
 
     if install_skill:
-        skill_root = workspace / (
-            ".claude/skills" if harness == "claude" else ".agents/skills"
-        )
-        skill_root.mkdir(parents=True)
-        shutil.copytree(SKILL_PATH, skill_root / "charlies-workflow")
+        install_workflow(workspace, harness)
 
     run_checked(["git", "init", "-q"], workspace)
     run_checked(["git", "config", "user.email", "workflow-eval@example.invalid"], workspace)
@@ -111,6 +139,7 @@ def build_command(
     prompt: str,
     command_template: str | None,
 ) -> list[str]:
+    prompt = render_prompt(harness, prompt)
     prompt_path = workspace.parent / f"{workspace.name}-eval-prompt.txt"
     prompt_path.write_text(prompt + "\n", encoding="utf-8")
     if command_template:
@@ -137,6 +166,8 @@ def build_command(
             "-p",
             "--permission-mode",
             "dontAsk",
+            "--append-system-prompt",
+            CLAUDE_SKILL_SYSTEM_PROMPT,
             "--output-format",
             "text",
             prompt,
@@ -180,6 +211,11 @@ def unexpected_workspace_changes(workspace: Path) -> list[str]:
             for prefix in TEMPORARY_OUTPUT_PREFIXES
         )
     ]
+
+
+def evaluation_output(completed: subprocess.CompletedProcess[str]) -> str:
+    """Return only the harness response, excluding diagnostic/tool stderr."""
+    return completed.stdout
 
 
 def evaluate_required_artifacts(
@@ -230,17 +266,18 @@ def evaluate_case(
             env=os.environ.copy(),
         )
         transcript = "\n".join((completed.stdout, completed.stderr)).strip()
+        evaluated_output = evaluation_output(completed)
         failures = []
         phase_pattern = PHASE_PATTERNS[case["expected_phase"]]
-        if re.search(phase_pattern, transcript) is None:
+        if re.search(phase_pattern, evaluated_output) is None:
             failures.append(
                 f"missing expected phase signal {case['expected_phase']}: {phase_pattern}"
             )
         for pattern in case["required_output"]:
-            if re.search(pattern, transcript) is None:
+            if re.search(pattern, evaluated_output) is None:
                 failures.append(f"missing output pattern: {pattern}")
         for pattern in case["forbidden_output"]:
-            if re.search(pattern, transcript) is not None:
+            if re.search(pattern, evaluated_output) is not None:
                 failures.append(f"forbidden output pattern: {pattern}")
         artifact_failures, artifacts = evaluate_required_artifacts(
             workspace, case["required_artifacts"]

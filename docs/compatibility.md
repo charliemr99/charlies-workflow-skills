@@ -32,11 +32,17 @@ The canonical lifecycle fixture is synthetic and labels itself
 `deterministic-contract-fixture`; it cannot claim a model, browser, GitHub, or
 harness actually performed the work.
 
-The **real Codex, Claude Code, and Cursor lifecycle runs are pending**. The
-optional model-driven smoke runner is separately labeled
-`model-driven-smoke-evaluation` and is not executed by normal validation.
-Passing schema and deterministic checks therefore means the package contract is
-coherent, not that cross-harness behavioral parity has already been measured.
+Real Codex and Claude Code lifecycle runs have been measured; Cursor remains
+pending. On 2026-08-23, Codex CLI `0.149.0-alpha.4.1` and Claude Code `2.1.132`
+both completed discovery, spec approval, a separate plan, TDD delivery,
+three-viewport browser verification, cleanup, and real draft PR publication
+against the same immutable fixture and hidden oracle. See
+[cross-harness E2E validation](e2e-validation.md).
+
+The optional smoke runner remains labeled `model-driven-smoke-evaluation`, and
+neither it nor the full lifecycle runner is executed by normal validation.
+Passing schema and deterministic checks therefore proves package coherence;
+the dated E2E evidence remains a separate, refreshable compatibility claim.
 
 ## Hallmark Network and Third-Party Asset Boundary
 

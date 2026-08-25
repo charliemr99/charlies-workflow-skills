@@ -147,14 +147,37 @@ uv run --with pyyaml ./scripts/validate.sh
 ```
 
 Normal validation includes a deterministic contract proof of the complete
-lifecycle. It does not call a model. **Behavioral Smoke Evaluations** remain
-opt-in:
+lifecycle plus unit tests for the real-run adapters. It does not call a model.
+**Behavioral Smoke Evaluations** remain opt-in:
 
 ```bash
 python3 scripts/eval-workflow.py --help
 # Optional model-driven comparison:
 python3 scripts/eval-workflow.py --compare-control
 ```
+
+The maintainer-only lifecycle evaluator uses a private immutable fixture,
+consumes Codex or Claude subscription capacity, creates a real draft PR, runs
+an independent browser oracle, and keeps transcripts under ignored `output/`:
+
+```bash
+python3 scripts/eval-full-lifecycle.py --harness codex \
+  --repo-dir /path/to/charlies-workflow-e2e-fixture
+python3 scripts/eval-full-lifecycle.py --harness claude \
+  --repo-dir /path/to/charlies-workflow-e2e-fixture
+```
+
+The evaluator runs a pinned Decant release automatically. A global install is
+optional for interactive analysis:
+
+```bash
+npm install --global @dosu/decant@0.4.0
+decant --version
+```
+
+See [cross-harness E2E telemetry](docs/e2e-validation.md) for the contract,
+per-turn models, time, tokens, cache activity, cost reconciliation, tool calls,
+delivery footprint, and interpretation limits.
 
 ## License
 

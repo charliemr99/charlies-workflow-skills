@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "evidence_boundary": "real-harness-lifecycle-evaluation",
+  "description": "A supervised multi-turn Feature Track evaluation that reaches a real draft PR.",
+  "fixture": "feedback-inbox",
+  "acceptance_criteria": [
+    "Search matches feedback title and customer name case-insensitively while preserving displayed order.",
+    "A native Status select supports All, Open, Planned, and Closed.",
+    "Search and status are represented by q and status URL query parameters; reload and browser back/forward restore the controls and results.",
+    "An unknown status URL value falls back to All without hiding feedback.",
+    "No matches shows an accessible empty state with a Reset filters button.",
+    "The controls and results remain keyboard accessible and usable at 390x844, 768x1024, and 1440x900.",
+    "Existing feedback ordering and desktop content remain unchanged when no filters are active."
+  ],
+  "turns": [
+    {
+      "id": "discovery",
+      "expected_phase": "awaiting-discovery-answer",
+      "forbid_source_changes": true,
+      "prompt": "{{workflow}}\nTrack: feature\nTier: medium\nInteractive mode. Improve triage in the existing Feedback Inbox so support agents can find relevant items quickly. Inspect the repository, begin discovery, ask the highest-impact questions still needed to define the behavior, and stop for my answer. Do not edit repository source or configuration. End with `Workflow phase: awaiting-discovery-answer`."
+    },
+    {
+      "id": "spec",
+      "expected_phase": "awaiting-spec-approval",
+      "forbid_source_changes": true,
+      "prompt": "Use these decisions: search feedback title and customer name case-insensitively; use a native Status select with All, Open, Planned, and Closed; preserve displayed order; synchronize search and status through q and status URL parameters; user-triggered filter changes create traversable history entries while canonicalization may replace the current entry; reload and browser back/forward must restore them; unknown status values fall back to All; keep the existing visible-count format as N items; no matches shows an accessible empty state with the helper copy Try a different search or status and a Reset filters button; preserve keyboard access and cover 390x844, 768x1024, and 1440x900. These are complete proposed requirements, not approval. Produce the proportional spec under the canonical ignored output/workflow/<run-id>/ directory and stop for explicit approval. Do not edit repository source or configuration. End with `Workflow phase: awaiting-spec-approval`."
+    },
+    {
+      "id": "plan",
+      "expected_phase": "plan-ready",
+      "forbid_source_changes": true,
+      "prompt": "I explicitly approve the complete spec you just presented. Record that approval, create a separate implementation plan derived from the approved spec, include concrete RED/GREEN tests and browser scenarios at all three required viewports, and stop before implementation. Do not edit repository source or configuration. End with `Workflow phase: plan-ready`."
+    },
+    {
+      "id": "delivery",
+      "expected_phase": "published",
+      "forbid_source_changes": false,
+      "prompt": "Continue autonomously through implementation, verification, documentation, consolidated review, cleanup, and publication. Follow TDD with witnessed RED and GREEN evidence. Run functional browser QA and Verify Beyond the Obvious at 390x844, 768x1024, and 1440x900 with screenshots. The approved GitHub identity and publication target are charliemr99 and charliemr99/charlies-workflow-e2e-fixture. Open a draft PR only. Do not merge or deploy. End with `Workflow phase: published` and the complete final report required by the workflow."
+    }
+  ],
+  "publication": {
+    "repository": "charliemr99/charlies-workflow-e2e-fixture",
+    "github_login": "charliemr99",
+    "base": "main",
+    "draft_only": true
+  }
+}

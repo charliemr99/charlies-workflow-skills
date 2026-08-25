@@ -100,6 +100,8 @@ class AuthoredFileCoverageTests(unittest.TestCase):
             'ROOT / "scripts" / "test_check_lifecycle_proof.py"',
             'ROOT / "scripts" / "eval-workflow.py"',
             'ROOT / "scripts" / "test_eval_workflow.py"',
+            'ROOT / "scripts" / "eval-full-lifecycle.py"',
+            'ROOT / "scripts" / "test_eval_full_lifecycle.py"',
             'ROOT / "scripts" / "skill_relationships.py"',
             'ROOT / "scripts" / "check-skill-relationships.py"',
             'ROOT / "scripts" / "test_check_skill_relationships.py"',
@@ -111,7 +113,10 @@ class AuthoredFileCoverageTests(unittest.TestCase):
             'ROOT / ".github" / "workflows" / "validate.yml"',
             'ROOT / "scripts" / "vendor" / "openai-skill-creator" / "NOTICE.md"',
             'ROOT / "evals" / "deterministic-lifecycle.json"',
+            'ROOT / "evals" / "charlies-workflow-full-lifecycle.json"',
+            'ROOT / "evals" / "oracles" / "feedback-inbox.mjs"',
             'ROOT / "docs" / "compatibility.md"',
+            'ROOT / "docs" / "e2e-validation.md"',
             'ROOT / "LICENSE"',
         ]:
             self.assertIn(path_expression, source)
@@ -133,6 +138,7 @@ class PackageCoherenceTests(unittest.TestCase):
         compatibility_path = ROOT / "docs" / "compatibility.md"
         self.assertTrue(compatibility_path.is_file())
         compatibility = compatibility_path.read_text(encoding="utf-8")
+        normalized_compatibility = " ".join(compatibility.split())
         validation = (ROOT / "scripts" / "validate.sh").read_text(encoding="utf-8")
         workflow = (
             ROOT / ".github" / "workflows" / "validate.yml"
@@ -150,16 +156,18 @@ class PackageCoherenceTests(unittest.TestCase):
         ]:
             self.assertIn(phrase, readme)
         for phrase in [
-            "real Codex, Claude Code, and Cursor lifecycle runs are pending",
+            "Real Codex and Claude Code lifecycle runs have been measured",
+            "Cursor remains pending",
             "Hallmark network and third-party asset boundary",
         ]:
-            self.assertIn(phrase, compatibility)
+            self.assertIn(phrase, normalized_compatibility)
         self.assertIn("Charlie-authored skill bodies are MIT", license_text)
 
         for command in [
             "test_check_skill_relationships.py",
             "test_skill_package.py",
             "test_check_lifecycle_proof.py",
+            "test_eval_full_lifecycle.py",
             "check-skill-relationships.py",
             "check-lifecycle-proof.py",
             "skills-ref==0.1.1",
