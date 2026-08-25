@@ -4,7 +4,9 @@ set -euo pipefail
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS_DIR="$ROOT_DIR/skills"
 PYTHON_BIN="${PYTHON:-python3}"
-VALIDATOR="${VALIDATOR:-$ROOT_DIR/scripts/vendor/openai-skill-creator/quick_validate.py}"
+CODEX_VALIDATOR="${VALIDATOR:-$ROOT_DIR/scripts/vendor/openai-skill-creator/quick_validate.py}"
+UVX_BIN="${UVX:-uvx}"
+REFERENCE_VALIDATOR="${REFERENCE_VALIDATOR:-skills-ref==0.1.1}"
 
 usage() {
   cat <<'USAGE'
@@ -14,9 +16,11 @@ Options:
   --skills-dir PATH
       Directory containing skill folders. Defaults to ./skills.
   --validator PATH
-      Path to Codex quick_validate.py. Defaults to the commit-pinned vendored copy.
+      Path to the commit-pinned Codex quick_validate.py.
   --python PATH
-      Python executable to run the validator.
+      Python executable for package checks and the Codex validator.
+  --uvx PATH
+      uvx executable used for the pinned Agent Skills reference validator.
   -h, --help
       Show this help.
 USAGE
@@ -29,11 +33,15 @@ while [[ $# -gt 0 ]]; do
       shift 2
       ;;
     --validator)
-      VALIDATOR="${2:?Missing value for --validator}"
+      CODEX_VALIDATOR="${2:?Missing value for --validator}"
       shift 2
       ;;
     --python)
       PYTHON_BIN="${2:?Missing value for --python}"
+      shift 2
+      ;;
+    --uvx)
+      UVX_BIN="${2:?Missing value for --uvx}"
       shift 2
       ;;
     -h|--help)
@@ -48,20 +56,28 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-if [[ ! -f "$VALIDATOR" ]]; then
-  echo "Validator not found: $VALIDATOR" >&2
-  echo "Set VALIDATOR=/path/to/quick_validate.py or restore the vendored validator." >&2
+if [[ ! -f "$CODEX_VALIDATOR" ]]; then
+  echo "Codex validator not found: $CODEX_VALIDATOR" >&2
   exit 1
 fi
-
 if [[ ! -d "$SKILLS_DIR" ]]; then
   echo "Skills directory not found: $SKILLS_DIR" >&2
   exit 1
 fi
+if ! command -v "$UVX_BIN" >/dev/null 2>&1; then
+  echo "uvx is required for the pinned Agent Skills reference validator." >&2
+  exit 1
+fi
 
 if [[ "$SKILLS_DIR" == "$ROOT_DIR/skills" ]]; then
-  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_check_workflow_contract.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_check_skill_relationships.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_skill_package.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_check_lifecycle_proof.py"
   "$PYTHON_BIN" "$ROOT_DIR/scripts/test_eval_workflow.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_eval_full_lifecycle.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_check_workflow_contract.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/check-skill-relationships.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/check-lifecycle-proof.py"
   "$PYTHON_BIN" "$ROOT_DIR/scripts/check-workflow-contract.py"
 fi
 
@@ -71,8 +87,11 @@ for skill_dir in "$SKILLS_DIR"/*; do
     echo "Skipping non-skill directory: $skill_dir"
     continue
   fi
-  echo "Validating $(basename "$skill_dir")"
-  "$PYTHON_BIN" "$VALIDATOR" "$skill_dir"
+  skill_name="$(basename "$skill_dir")"
+  echo "Validating with Codex validator: $skill_name"
+  "$PYTHON_BIN" "$CODEX_VALIDATOR" "$skill_dir"
+  echo "Validating with Agent Skills reference: $skill_name"
+  "$UVX_BIN" --from "$REFERENCE_VALIDATOR" agentskills validate "$skill_dir"
 done
 
-echo "All bundled skills are valid."
+echo "All bundled skills and package contracts are valid."

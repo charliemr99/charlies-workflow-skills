@@ -1,6 +1,7 @@
 ---
 name: charlies-workflow
 description: Use when the user explicitly invokes $charlies-workflow for a greenfield project, MVP, feature, bug fix, refactor, UI change, or PR-ready implementation workflow
+license: MIT
 ---
 
 # Charlies Workflow
@@ -49,6 +50,11 @@ design critique, optional Ponytail skills own simplicity analysis, `doc-it`
 owns documentation quality, and PR skills own PR text. A helper may not change
 the selected track, skip a gate, commit temporary artifacts, or broaden its
 phase.
+
+Resolve selected helpers through
+[helper-loading.md](references/helper-loading.md). A helper's activation policy
+does not change Charlie's explicit-only entrypoint or transfer lifecycle
+ownership.
 
 `No blocking questions` is a discovery conclusion backed by repository facts
 and explicit assumptions, never a shortcut around the discovery action.
@@ -110,6 +116,10 @@ ceremony.
 
 Load a helper only when the current action needs it:
 
+The local name and namespaced form below are lookup aliases. In an installed
+package, the adapted bundled sibling is authoritative under
+[helper-loading.md](references/helper-loading.md).
+
 - `brainstorming` / `superpowers:brainstorming`: non-trivial discovery and spec.
 - `writing-plans` / `superpowers:writing-plans`: Medium and Complex plans.
 - `test-driven-development` / `superpowers:test-driven-development`: behavior changes.
@@ -137,10 +147,18 @@ not edit the spec, acceptance criteria, or plan.
 ## Temporary State and Artifacts
 
 For Medium and Complex work, copy
-`assets/run-state-template.json` into the current run directory, normally
-`output/workflow/<run-id>/`. Verify that location is ignored before writing. If
-the repository has no ignored workflow location, use an OS temporary directory
-instead of changing `.gitignore` solely for workflow artifacts.
+`assets/run-state-template.json` to `run-state.json` in the current run
+directory, normally `output/workflow/<run-id>/`. Verify that location is ignored
+before writing. If the repository has no ignored workflow location, use an OS
+temporary directory instead of changing `.gitignore` solely for workflow
+artifacts. Do not substitute `.agents/`, `.claude/`, or another ignored folder
+when the canonical `output/workflow/` location is available.
+
+For Medium and Complex work, Ground and Route has not passed until that file
+exists, parses, and records `phase` as `discovery`. Do not read the Discover and
+Spec action or ask discovery questions before verifying this observable state.
+A request not to edit source or configuration does not prohibit ignored
+workflow state.
 
 Update state only after the relevant Exit Test passes. The spec, plan, review
 notes, state, and necessary evidence are execution aids. Retain them through
@@ -158,6 +176,11 @@ Production edits are blocked until the selected track and tier are recorded,
 discovery is complete, the proportional spec is approved or explicitly
 `not-required` under the complete Small-request rule, and the separate plan is
 ready or explicitly not-required.
+
+For Medium and Complex work, discovery itself is blocked until
+`output/workflow/<run-id>/run-state.json` exists and records `phase` as
+`discovery` (or the equivalent verified OS-temporary path when no ignored
+workflow location exists).
 
 Publication is blocked until:
 

@@ -8,6 +8,8 @@ from pathlib import Path
 
 import yaml
 
+from skill_relationships import validate_all as validate_skill_relationships
+
 
 ROOT = Path(__file__).resolve().parents[1]
 CHARLIE = ROOT / "skills" / "charlies-workflow"
@@ -60,6 +62,8 @@ def require_explicit_only(path: Path) -> None:
 
 
 def main() -> None:
+    validate_skill_relationships(ROOT)
+
     charlie_lines = (CHARLIE / "SKILL.md").read_text(encoding="utf-8").splitlines()
     if len(charlie_lines) > 220:
         raise AssertionError("Charlie's SKILL.md must stay at or below 220 lines")
@@ -316,12 +320,18 @@ def main() -> None:
     )
     if hallmark is None:
         raise AssertionError("manifest.json does not list Hallmark")
-    if hallmark.get("upstream_commit") != "aeb42fb354ff4efa36ab475773a082315a3af2ce":
+    hallmark_source = hallmark.get("source")
+    if (
+        not isinstance(hallmark_source, dict)
+        or hallmark_source.get("commit")
+        != "aeb42fb354ff4efa36ab475773a082315a3af2ce"
+    ):
         raise AssertionError("manifest.json does not pin the reviewed Hallmark commit")
 
     require_text(
         ROOT / "README.md",
         [
+            "Codex-first, portable by the Agent Skills format",
             "Feature Track",
             "Project Track",
             "Hallmark",
@@ -330,11 +340,61 @@ def main() -> None:
             "Behavioral Smoke Evaluations",
             "three-viewport",
             "--compare-control",
+            "deterministic contract proof",
+            "project install",
+            "user install",
+            "selective install",
+            "receipt",
+            "uninstall",
+        ],
+    )
+    require_text(
+        ROOT / "docs" / "compatibility.md",
+        [
+            "Real Codex and Claude Code lifecycle runs have been measured",
+            "Cursor",
+            "Hallmark network and third-party asset boundary",
+            "deterministic-contract-fixture",
+            "model-driven-smoke-evaluation",
+            "disable-model-invocation: true",
+        ],
+    )
+    require_text(
+        ROOT / "LICENSE",
+        ["Charlie-authored skill bodies are MIT"],
+    )
+    require_text(
+        ROOT / "scripts" / "validate.sh",
+        [
+            "test_check_skill_relationships.py",
+            "test_skill_package.py",
+            "test_check_lifecycle_proof.py",
+            "test_eval_full_lifecycle.py",
+            "check-skill-relationships.py",
+            "check-lifecycle-proof.py",
+            "skills-ref==0.1.1",
+            "agentskills validate",
+        ],
+    )
+    require_text(
+        ROOT / ".github" / "workflows" / "validate.yml",
+        [
+            "scripts/install.sh",
+            "scripts/uninstall.sh",
+            "--scope project",
+            "--scope user",
         ],
     )
     require_text(
         ROOT / "THIRD_PARTY_NOTICES.md",
-        ["Hallmark", "Nutlope/hallmark"],
+        [
+            "Hallmark",
+            "Nutlope/hallmark",
+            "Emil Kowalski",
+            "Next Level Builder",
+            "Taylor Dolezal",
+            "Superpowers",
+        ],
     )
 
     eval_cases = json.loads(
@@ -344,6 +404,8 @@ def main() -> None:
     )
     if eval_cases.get("schema_version") != 2:
         raise AssertionError("Behavioral eval schema_version must be 2")
+    if eval_cases.get("evidence_boundary") != "model-driven-smoke-evaluation":
+        raise AssertionError("Behavioral eval evidence boundary is missing")
     cases = eval_cases.get("cases")
     if not isinstance(cases, list) or len(cases) < 5:
         raise AssertionError("At least five behavioral eval cases are required")
@@ -379,6 +441,52 @@ def main() -> None:
             "forbid_workspace_changes",
             "unexpected_workspace_changes",
             "compare-control",
+            "model-driven-smoke-evaluation",
+        ],
+    )
+    full_lifecycle = json.loads(
+        (ROOT / "evals" / "charlies-workflow-full-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if full_lifecycle.get("evidence_boundary") != "real-harness-lifecycle-evaluation":
+        raise AssertionError("Real lifecycle evidence boundary is missing")
+    if [turn.get("expected_phase") for turn in full_lifecycle.get("turns", [])] != [
+        "awaiting-discovery-answer",
+        "awaiting-spec-approval",
+        "plan-ready",
+        "published",
+    ]:
+        raise AssertionError("Real lifecycle checkpoints are missing or out of order")
+    if not full_lifecycle.get("publication", {}).get("draft_only"):
+        raise AssertionError("Real lifecycle publication must remain draft-only")
+    require_text(
+        ROOT / "scripts" / "eval-full-lifecycle.py",
+        [
+            "real-harness-lifecycle-evaluation",
+            "run-state.json",
+            "has_temporary_artifacts",
+            "run_browser_oracle",
+            "find_draft_pr",
+            "@dosu/decant@",
+        ],
+    )
+    lifecycle = json.loads(
+        (ROOT / "evals" / "deterministic-lifecycle.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if lifecycle.get("evidence_boundary") != "deterministic-contract-fixture":
+        raise AssertionError("Deterministic lifecycle evidence boundary is missing")
+    require_text(
+        ROOT / "scripts" / "check-lifecycle-proof.py",
+        [
+            "deterministic-contract-fixture",
+            "small-mobile",
+            "tablet",
+            "desktop",
+            "candidate HEAD",
+            "draft publication",
         ],
     )
 
@@ -388,21 +496,43 @@ def main() -> None:
         CHARLIE / "assets" / "run-state-template.json",
         CHARLIE / "references" / "project-track.md",
         CHARLIE / "references" / "hallmark-routing.md",
+        CHARLIE / "references" / "helper-loading.md",
         CHARLIE / "references" / "ponytail-routing.md",
         CHARLIE / "references" / "documentation-and-artifacts.md",
         CHARLIE / "agents" / "openai.yaml",
         ROOT / "README.md",
+        ROOT / "docs" / "compatibility.md",
+        ROOT / "docs" / "e2e-validation.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
+        ROOT / "evals" / "charlies-workflow-full-lifecycle.json",
+        ROOT / "evals" / "deterministic-lifecycle.json",
+        ROOT / "evals" / "oracles" / "feedback-inbox.mjs",
+        *(
+            path
+            for path in (ROOT / "evals" / "fixtures" / "feedback-inbox").rglob("*")
+            if path.is_file()
+        ),
         ROOT / "scripts" / "check-workflow-contract.py",
         ROOT / "scripts" / "test_check_workflow_contract.py",
+        ROOT / "scripts" / "check-lifecycle-proof.py",
+        ROOT / "scripts" / "test_check_lifecycle_proof.py",
         ROOT / "scripts" / "eval-workflow.py",
         ROOT / "scripts" / "test_eval_workflow.py",
+        ROOT / "scripts" / "eval-full-lifecycle.py",
+        ROOT / "scripts" / "test_eval_full_lifecycle.py",
+        ROOT / "scripts" / "skill_relationships.py",
+        ROOT / "scripts" / "check-skill-relationships.py",
+        ROOT / "scripts" / "test_check_skill_relationships.py",
+        ROOT / "scripts" / "skill-package.py",
+        ROOT / "scripts" / "test_skill_package.py",
         ROOT / "scripts" / "install.sh",
+        ROOT / "scripts" / "uninstall.sh",
         ROOT / "scripts" / "validate.sh",
         ROOT / ".github" / "workflows" / "validate.yml",
         ROOT / "scripts" / "vendor" / "openai-skill-creator" / "NOTICE.md",
         ROOT / "manifest.json",
         ROOT / "THIRD_PARTY_NOTICES.md",
+        ROOT / "LICENSE",
     ]
     placeholders = [
         str(path)

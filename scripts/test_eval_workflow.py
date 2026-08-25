@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import importlib.util
+import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -18,6 +20,27 @@ SPEC.loader.exec_module(EVAL)
 
 
 class EvalWorkflowTests(unittest.TestCase):
+    def test_catalog_and_reports_use_the_model_smoke_boundary(self) -> None:
+        catalog = json.loads(EVAL.CASES_PATH.read_text(encoding="utf-8"))
+        self.assertEqual(
+            catalog.get("evidence_boundary"),
+            "model-driven-smoke-evaluation",
+        )
+        report = EVAL.build_report(
+            harness="codex",
+            comparison_mode=False,
+            results=[
+                {
+                    "variant": "skill",
+                    "passed": True,
+                }
+            ],
+        )
+        self.assertEqual(
+            report["evidence_boundary"],
+            "model-driven-smoke-evaluation",
+        )
+
     def test_catalog_contains_each_required_gate(self) -> None:
         case_ids = {case["id"] for case in EVAL.load_cases()}
         self.assertEqual(
@@ -75,6 +98,31 @@ class EvalWorkflowTests(unittest.TestCase):
         finally:
             temporary.cleanup()
 
+    def test_skill_fixture_installs_the_bundled_dependency_closure(self) -> None:
+        temporary, workspace = EVAL.create_fixture("codex")
+        try:
+            skills_root = workspace / ".agents" / "skills"
+            self.assertTrue((skills_root / "charlies-workflow" / "SKILL.md").is_file())
+            self.assertTrue((skills_root / "brainstorming" / "SKILL.md").is_file())
+            self.assertTrue((skills_root / "writing-plans" / "SKILL.md").is_file())
+            self.assertTrue((skills_root / "playwright" / "SKILL.md").is_file())
+            self.assertTrue(
+                (skills_root / ".charlies-workflow-skills" / "receipt.json").is_file()
+            )
+        finally:
+            temporary.cleanup()
+
+    def test_claude_fixture_uses_the_harness_adapter(self) -> None:
+        temporary, workspace = EVAL.create_fixture("claude")
+        try:
+            skill = workspace / ".claude" / "skills" / "charlies-workflow" / "SKILL.md"
+            self.assertIn(
+                "disable-model-invocation: true",
+                skill.read_text(encoding="utf-8"),
+            )
+        finally:
+            temporary.cleanup()
+
     def test_prompt_file_stays_outside_the_fixture(self) -> None:
         temporary, workspace = EVAL.create_fixture("codex")
         try:
@@ -96,6 +144,33 @@ class EvalWorkflowTests(unittest.TestCase):
                 command,
                 ["runner", "--cwd", directory, "--prompt", "hello world"],
             )
+
+    def test_build_command_renders_the_harness_specific_invocation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = Path(directory)
+            codex = EVAL.build_command(
+                "codex", workspace, "{{workflow}} Add search.", None
+            )
+            claude = EVAL.build_command(
+                "claude", workspace, "{{workflow}} Add search.", None
+            )
+            self.assertIn("$charlies-workflow Add search.", codex)
+            self.assertIn("/charlies-workflow Add search.", claude)
+            self.assertIn("--append-system-prompt", claude)
+            self.assertIn(EVAL.CLAUDE_SKILL_SYSTEM_PROMPT, claude)
+            self.assertNotIn("{{workflow}}", " ".join(codex + claude))
+
+    def test_assertions_only_use_the_harness_final_output(self) -> None:
+        completed = subprocess.CompletedProcess(
+            args=["codex"],
+            returncode=0,
+            stdout="Workflow phase: awaiting-discovery-answer\n",
+            stderr="tool output mentioned draft PR from the skill body\n",
+        )
+        self.assertEqual(
+            EVAL.evaluation_output(completed),
+            "Workflow phase: awaiting-discovery-answer\n",
+        )
 
 
 if __name__ == "__main__":

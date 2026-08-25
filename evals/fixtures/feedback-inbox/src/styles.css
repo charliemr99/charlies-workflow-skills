@@ -1,0 +1,153 @@
+:root {
+  color: #17201d;
+  background: #f4f6f5;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-synthesis: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+.topbar {
+  display: flex;
+  min-height: 56px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  border-bottom: 1px solid #d6dcda;
+  background: #ffffff;
+}
+
+.brand {
+  color: #10231d;
+  font-size: 18px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.workspace {
+  color: #596560;
+  font-size: 14px;
+}
+
+main {
+  width: min(100% - 32px, 960px);
+  margin: 0 auto;
+  padding: 48px 0 72px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.eyebrow,
+.count {
+  margin: 0;
+  color: #5d6864;
+  font-size: 13px;
+}
+
+h1 {
+  margin: 5px 0 0;
+  font-size: 32px;
+  letter-spacing: 0;
+}
+
+.feedback-list {
+  overflow: hidden;
+  border: 1px solid #d6dcda;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.feedback-card {
+  padding: 22px 24px;
+  border-bottom: 1px solid #e3e7e5;
+}
+
+.feedback-card:last-child {
+  border-bottom: 0;
+}
+
+.feedback-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #67716d;
+  font-size: 13px;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.status--open {
+  color: #0f6c67;
+}
+
+.status--planned {
+  color: #6554a4;
+}
+
+.status--closed {
+  color: #56605c;
+}
+
+.feedback-card h2 {
+  margin: 14px 0 6px;
+  font-size: 18px;
+  letter-spacing: 0;
+}
+
+.feedback-card p {
+  max-width: 70ch;
+  margin: 0;
+  color: #4d5955;
+  line-height: 1.55;
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    padding: 0 16px;
+  }
+
+  main {
+    width: min(100% - 24px, 960px);
+    padding-top: 32px;
+  }
+
+  .page-heading {
+    align-items: start;
+  }
+
+  h1 {
+    font-size: 27px;
+  }
+
+  .feedback-card {
+    padding: 20px 18px;
+  }
+}

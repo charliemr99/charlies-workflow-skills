@@ -14,6 +14,8 @@
   requested.
 - Execution strategy, automatic Ponytail mode and reason, minimal skill set,
   affected surfaces, and initialized run state.
+- For Medium and Complex work, a parseable
+  `output/workflow/<run-id>/run-state.json` whose `phase` is `discovery`.
 
 ## Process
 
@@ -39,9 +41,14 @@
 7. Select only the skills needed for the current phase. Record why each was
    selected. Load Ponytail only when the routing decision selects it and the
    helper is available, passing the exact selected intensity.
-8. For Medium or Complex work, initialize a run directory from
+8. For Medium or Complex work, initialize
+   `output/workflow/<run-id>/run-state.json` from
    `../assets/run-state-template.json`. Confirm the path is ignored, or use an
-   OS temporary directory. Never modify `.gitignore` solely for workflow state.
+   OS temporary directory. Do not choose `.agents/`, `.claude/`, or another
+   ignored folder when `output/workflow/` is available. Never modify
+   `.gitignore` solely for workflow state. This ignored file is required
+   workflow state, not production source or configuration. Set its grounded
+   routing fields and `phase` to `discovery`, then parse or read it back.
 9. Treat `no questions`, `auto`, or `autonomous` as an approval-mode choice.
    It does not remove discovery, spec, plan, TDD, verification, documentation,
    or review requirements.
@@ -55,4 +62,9 @@ Do not edit production code during this action.
 - Repository truth, affected surfaces, constraints, and material risks are
   known well enough to begin discovery.
 - Unrelated work is protected and the run state has advanced to `discovery`.
+- For Medium and Complex work, the canonical `run-state.json` exists, parses,
+  contains the selected routing values, and records `phase` as `discovery`.
 - No production file has been changed.
+
+Do not read `02-discover-and-spec.md` or ask discovery questions until every
+Exit Test item above has observable evidence.

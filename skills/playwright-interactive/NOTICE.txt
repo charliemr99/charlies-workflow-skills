@@ -3,6 +3,8 @@ This skill reuses the Playwright icon assets from `.codex/skills/playwright/asse
 The local `playwright` skill attributes those assets to the Microsoft
 `playwright-cli` repository.
 
+Reviewed upstream commit: 34bf2ada4d4a28723bd65ba4e56ba724fdaaa959
+
 Copyright (c) Microsoft Corporation.
 
 Licensed under the Apache License, Version 2.0.
