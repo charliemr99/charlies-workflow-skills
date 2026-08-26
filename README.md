@@ -22,9 +22,15 @@ plan and capture browser evidence when relevant, update durable documentation,
 review the exact candidate commit, and open a draft PR by default. Meaningful
 UI work includes a three-viewport quality review.
 
+`charlies-content-workflow` is an explicit-only child overlay for
+evidence-backed short-form content. It adds content research, claims,
+production, compiled-master QA, and handoff rules while its
+`charlies-workflow` parent retains the generic delivery lifecycle.
+
 ## Included Skills
 
 - Router: `charlies-workflow`
+- Content overlay: `charlies-content-workflow`
 - Discovery and execution: `brainstorming`, `writing-plans`,
   `test-driven-development`, `using-git-worktrees`,
   `subagent-driven-development`
@@ -81,6 +87,17 @@ automatically:
   --harness cursor --skill hallmark --skill emil-design-eng
 ```
 
+Selecting the content child installs its `charlies-workflow` parent and that
+parent's bundled dependencies before the child:
+
+```bash
+./scripts/install.sh --scope project --project-dir /path/to/project \
+  --harness codex --skill charlies-content-workflow
+```
+
+Use `--harness claude` or `--harness cursor` with the same child selection for
+their supported project or custom skill roots.
+
 Use `--target-dir /explicit/skills/path` for a custom destination. Running
 without a project, user, or custom destination is rejected. Existing skills are
 also rejected unless `--force` is supplied; forced replacements are backed
@@ -128,6 +145,25 @@ Create an MVP for independent consultants to collect client approvals.
 Interactive work stops for approval of the final spec before planning.
 Autonomous work records approval evidence and preserves the same ordered gates
 without routine check-ins.
+
+Invoke the content overlay explicitly for a complete production lifecycle:
+
+```text
+$charlies-content-workflow auto
+Create English and Spanish evidence-backed Reels from this product update.
+```
+
+It selects the smallest applicable scope:
+
+- **Strategy and research only**
+- **Evidence-backed pre-production package**
+- **Full production and master delivery**
+- **Refresh or re-version** of an existing piece
+
+The workflow maintains a dated source map and claim ledger, separately times
+English and Spanish production, and treats compiled-output QA rather than a
+preview as final proof. Content publication remains a separate authority gate;
+a verified local master or draft PR does not authorize uploads or distribution.
 
 ## Optional Integrations
 
