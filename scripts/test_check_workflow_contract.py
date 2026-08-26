@@ -107,6 +107,9 @@ class AuthoredFileCoverageTests(unittest.TestCase):
             'ROOT / "scripts" / "test_check_skill_relationships.py"',
             'ROOT / "scripts" / "skill-package.py"',
             'ROOT / "scripts" / "test_skill_package.py"',
+            'ROOT / "scripts" / "check-content-workflow-contract.py"',
+            'ROOT / "scripts" / "test_check_content_workflow_contract.py"',
+            'ROOT / "evals" / "charlies-content-workflow-contract.json"',
             'ROOT / "scripts" / "install.sh"',
             'ROOT / "scripts" / "uninstall.sh"',
             'ROOT / "scripts" / "validate.sh"',
@@ -182,6 +185,23 @@ class PackageCoherenceTests(unittest.TestCase):
         ]:
             self.assertIn(command, workflow)
 
+    def test_readme_documents_content_workflow_scope_and_boundaries(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        normalized = " ".join(readme.split())
+        for phrase in [
+            "$charlies-content-workflow auto",
+            "`charlies-workflow` parent",
+            "Strategy and research only",
+            "Evidence-backed pre-production package",
+            "Full production and master delivery",
+            "Refresh or re-version",
+            "claim ledger",
+            "English and Spanish",
+            "compiled-output QA",
+            "publication remains a separate authority gate",
+        ]:
+            self.assertIn(phrase, normalized)
+
     def test_charlie_routes_helpers_through_a_portable_loading_contract(self) -> None:
         helper_loading = (
             ROOT
@@ -243,6 +263,7 @@ class PackageCoherenceTests(unittest.TestCase):
         actual = {skill["name"]: skill["adapted"] for skill in manifest["skills"]}
         expected = {
             "charlies-workflow": False,
+            "charlies-content-workflow": False,
             "hallmark": True,
             "emil-design-eng": False,
             "ui-ux-pro-max": True,

@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "evidence_boundary": "deterministic-content-routing-contract",
+  "positive_cases": [
+    {
+      "id": "benchmark-reel-bilingual",
+      "request": "Create English and Spanish before/after benchmark Reels with A-roll, VO, HyperFrames evidence, captions, and final masters.",
+      "required_gates": [
+        "claim-ledger",
+        "freshness",
+        "benchmark-protocol",
+        "shot-matrix",
+        "bilingual-timing",
+        "compiled-output",
+        "caption-face-safety",
+        "full-decode",
+        "final-claim-reconciliation"
+      ]
+    }
+  ],
+  "negative_cases": [
+    {
+      "id": "caption-rewrite",
+      "request": "Rewrite this Instagram caption.",
+      "must_not_implicitly_invoke": true
+    }
+  ]
+}

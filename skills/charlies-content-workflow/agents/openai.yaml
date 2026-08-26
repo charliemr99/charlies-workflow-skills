@@ -1,0 +1,6 @@
+interface:
+  display_name: "Charlie's Content Workflow"
+  short_description: "Evidence-backed short-form content production"
+  default_prompt: "Use $charlies-content-workflow to research, prove, script, produce, caption, verify, and hand off an evidence-backed short-form video."
+policy:
+  allow_implicit_invocation: false

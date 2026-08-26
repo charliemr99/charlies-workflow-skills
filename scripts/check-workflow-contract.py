@@ -13,6 +13,7 @@ from skill_relationships import validate_all as validate_skill_relationships
 
 ROOT = Path(__file__).resolve().parents[1]
 CHARLIE = ROOT / "skills" / "charlies-workflow"
+CONTENT = ROOT / "skills" / "charlies-content-workflow"
 HALLMARK = ROOT / "skills" / "hallmark"
 
 
@@ -337,6 +338,10 @@ def main() -> None:
             "Hallmark",
             "Automatic Ponytail Routing",
             "Ponytail plugin",
+            "$charlies-content-workflow auto",
+            "claim ledger",
+            "compiled-output QA",
+            "publication remains a separate authority gate",
             "Behavioral Smoke Evaluations",
             "three-viewport",
             "--compare-control",
@@ -370,8 +375,10 @@ def main() -> None:
             "test_skill_package.py",
             "test_check_lifecycle_proof.py",
             "test_eval_full_lifecycle.py",
+            "test_check_content_workflow_contract.py",
             "check-skill-relationships.py",
             "check-lifecycle-proof.py",
+            "check-content-workflow-contract.py",
             "skills-ref==0.1.1",
             "agentskills validate",
         ],
@@ -500,12 +507,21 @@ def main() -> None:
         CHARLIE / "references" / "ponytail-routing.md",
         CHARLIE / "references" / "documentation-and-artifacts.md",
         CHARLIE / "agents" / "openai.yaml",
+        CONTENT / "SKILL.md",
+        *(CONTENT / reference for reference in [
+            "references/content-brief-and-research.md",
+            "references/claims-and-evidence.md",
+            "references/production-and-hyperframes.md",
+            "references/final-av-qa-and-handoff.md",
+        ]),
+        CONTENT / "agents" / "openai.yaml",
         ROOT / "README.md",
         ROOT / "docs" / "compatibility.md",
         ROOT / "docs" / "e2e-validation.md",
         ROOT / "evals" / "charlies-workflow-cases.json",
         ROOT / "evals" / "charlies-workflow-full-lifecycle.json",
         ROOT / "evals" / "deterministic-lifecycle.json",
+        ROOT / "evals" / "charlies-content-workflow-contract.json",
         ROOT / "evals" / "oracles" / "feedback-inbox.mjs",
         *(
             path
@@ -525,6 +541,8 @@ def main() -> None:
         ROOT / "scripts" / "test_check_skill_relationships.py",
         ROOT / "scripts" / "skill-package.py",
         ROOT / "scripts" / "test_skill_package.py",
+        ROOT / "scripts" / "check-content-workflow-contract.py",
+        ROOT / "scripts" / "test_check_content_workflow_contract.py",
         ROOT / "scripts" / "install.sh",
         ROOT / "scripts" / "uninstall.sh",
         ROOT / "scripts" / "validate.sh",

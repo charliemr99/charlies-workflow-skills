@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "package_version": "1.1.0",
+  "package_version": "1.2.0",
   "name": "charlies-workflow-skills",
   "owner": "charliemr99",
   "creator": "GreenByte Studios",
@@ -46,6 +46,29 @@
       ],
       "source": {"type": "repository-owned", "path": "skills/charlies-workflow"},
       "notes": "Explicit-only Feature and Project Track router with approval fingerprints, exact-HEAD evidence, and optional capability-aware Ponytail routing."
+    },
+    {
+      "name": "charlies-content-workflow",
+      "category": "workflow",
+      "ownership": "greenbyte-authored",
+      "license": "MIT",
+      "adapted": false,
+      "activation": {"role": "explicit-entry", "implicit": false},
+      "dependencies": {
+        "bundled": ["charlies-workflow"],
+        "external_optional": []
+      },
+      "required_resources": [
+        "references/content-brief-and-research.md",
+        "references/claims-and-evidence.md",
+        "references/production-and-hyperframes.md",
+        "references/final-av-qa-and-handoff.md"
+      ],
+      "source": {
+        "type": "repository-owned",
+        "path": "skills/charlies-content-workflow"
+      },
+      "notes": "Explicit-only content-production overlay that delegates generic delivery gates to Charlie's Workflow."
     },
     {
       "name": "hallmark",
