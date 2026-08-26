@@ -246,6 +246,7 @@ class PackageCoherenceTests(unittest.TestCase):
         actual = {skill["name"]: skill["adapted"] for skill in manifest["skills"]}
         expected = {
             "charlies-workflow": False,
+            "charlies-content-workflow": False,
             "hallmark": True,
             "emil-design-eng": False,
             "ui-ux-pro-max": True,

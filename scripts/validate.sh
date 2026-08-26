@@ -76,9 +76,11 @@ if [[ "$SKILLS_DIR" == "$ROOT_DIR/skills" ]]; then
   "$PYTHON_BIN" "$ROOT_DIR/scripts/test_eval_workflow.py"
   "$PYTHON_BIN" "$ROOT_DIR/scripts/test_eval_full_lifecycle.py"
   "$PYTHON_BIN" "$ROOT_DIR/scripts/test_check_workflow_contract.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/test_check_content_workflow_contract.py"
   "$PYTHON_BIN" "$ROOT_DIR/scripts/check-skill-relationships.py"
   "$PYTHON_BIN" "$ROOT_DIR/scripts/check-lifecycle-proof.py"
   "$PYTHON_BIN" "$ROOT_DIR/scripts/check-workflow-contract.py"
+  "$PYTHON_BIN" "$ROOT_DIR/scripts/check-content-workflow-contract.py"
 fi
 
 for skill_dir in "$SKILLS_DIR"/*; do
