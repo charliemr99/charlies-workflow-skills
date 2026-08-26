@@ -12,6 +12,7 @@ from types import ModuleType
 
 
 MODULE_PATH = Path(__file__).with_name("skill_relationships.py")
+ROOT = MODULE_PATH.parents[1]
 
 
 def load_relationships() -> ModuleType:
@@ -302,6 +303,38 @@ class SkillRelationshipTests(unittest.TestCase):
 
         with self.assertRaisesRegex(AssertionError, "ownership.*source type"):
             relationships.validate_manifest_graph(self.fixture.root)
+
+
+class PackageRelationshipTests(unittest.TestCase):
+    def test_content_workflow_is_an_explicit_child_of_charlie(self) -> None:
+        relationships = load_relationships()
+        manifest = relationships.load_manifest(ROOT)
+
+        closure = relationships.resolve_bundled_closure(
+            manifest,
+            ["charlies-content-workflow"],
+        )
+        self.assertEqual(
+            closure[-2:],
+            ["charlies-workflow", "charlies-content-workflow"],
+        )
+
+        child = next(
+            skill
+            for skill in manifest["skills"]
+            if skill["name"] == "charlies-content-workflow"
+        )
+        self.assertEqual(
+            child["activation"],
+            {"role": "explicit-entry", "implicit": False},
+        )
+        self.assertEqual(
+            child["source"],
+            {
+                "type": "repository-owned",
+                "path": "skills/charlies-content-workflow",
+            },
+        )
 
 
 if __name__ == "__main__":

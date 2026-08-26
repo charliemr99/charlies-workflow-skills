@@ -153,6 +153,51 @@ class SkillPackageTests(unittest.TestCase):
             receipt["resolved_skills"],
         )
 
+    def test_selected_content_workflow_installs_parent_then_child(self) -> None:
+        source_child = ROOT / "skills" / "charlies-content-workflow" / "SKILL.md"
+        source_parent = ROOT / "skills" / "charlies-workflow" / "SKILL.md"
+        source_parent_bytes = source_parent.read_bytes()
+
+        for harness in ("codex", "claude", "cursor"):
+            with self.subTest(harness=harness):
+                target = self.root / f"content-{harness}"
+                result = self.run_cli(
+                    "install",
+                    "--target-dir",
+                    str(target),
+                    "--harness",
+                    harness,
+                    "--skill",
+                    "charlies-content-workflow",
+                )
+                self.assert_success(result)
+
+                receipt = json.loads((target / RECEIPT).read_text(encoding="utf-8"))
+                self.assertEqual(
+                    receipt["resolved_skills"][-2:],
+                    ["charlies-workflow", "charlies-content-workflow"],
+                )
+                self.assertTrue((target / "charlies-workflow" / "SKILL.md").is_file())
+                installed_child = target / "charlies-content-workflow"
+                self.assertTrue((installed_child / "SKILL.md").is_file())
+
+                metadata = (installed_child / "agents" / "openai.yaml").read_text(
+                    encoding="utf-8"
+                )
+                self.assertIn("allow_implicit_invocation: false", metadata)
+                child_text = (installed_child / "SKILL.md").read_text(encoding="utf-8")
+                if harness == "codex":
+                    self.assertNotIn("disable-model-invocation", child_text)
+                else:
+                    self.assertIn("disable-model-invocation: true", child_text)
+
+        self.assertEqual(source_parent_bytes, source_parent.read_bytes())
+        if source_child.is_file():
+            self.assertNotIn(
+                "disable-model-invocation",
+                source_child.read_text(encoding="utf-8"),
+            )
+
     def test_installed_skills_include_package_license_and_provenance(self) -> None:
         target = self.root / "licensed"
         result = self.run_cli(
