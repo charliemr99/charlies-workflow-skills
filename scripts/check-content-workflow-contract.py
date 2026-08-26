@@ -14,8 +14,6 @@ from skill_relationships import validate_all as validate_skill_relationships
 
 ROOT = Path(__file__).resolve().parents[1]
 CHILD_NAME = "charlies-content-workflow"
-CHILD = ROOT / "skills" / CHILD_NAME
-FIXTURE = ROOT / "evals" / "charlies-content-workflow-contract.json"
 MAX_ENTRYPOINT_LINES = 180
 REQUIRED_REFERENCES = (
     "references/content-brief-and-research.md",
@@ -50,13 +48,6 @@ def require_text(path: Path, phrases: list[str]) -> None:
         raise AssertionError(f"{path}: missing {missing}")
 
 
-def require_absent(path: Path, phrases: list[str]) -> None:
-    content = path.read_text(encoding="utf-8")
-    present = [phrase for phrase in phrases if phrase in content]
-    if present:
-        raise AssertionError(f"{path}: forbidden {present}")
-
-
 def require_ordered_text(path: Path, phrases: list[str]) -> None:
     content = path.read_text(encoding="utf-8")
     cursor = 0
@@ -77,6 +68,32 @@ def require_explicit_only(path: Path) -> None:
         or policy.get("allow_implicit_invocation") is not False
     ):
         raise AssertionError(f"{path}: implicit invocation must remain disabled")
+
+
+def validate_openai_metadata(path: Path) -> None:
+    content = path.read_text(encoding="utf-8")
+    document = yaml.safe_load(content)
+    interface = document.get("interface") if isinstance(document, dict) else None
+    if not isinstance(interface, dict):
+        raise AssertionError(f"{path}: interface metadata is missing")
+
+    expected = {
+        "display_name": "Charlie's Content Workflow",
+        "short_description": "Evidence-backed short-form content production",
+        "default_prompt": (
+            "Use $charlies-content-workflow to research, prove, script, produce, "
+            "caption, verify, and hand off an evidence-backed short-form video."
+        ),
+    }
+    for key, value in expected.items():
+        if interface.get(key) != value:
+            raise AssertionError(f"{path}: invalid {key}; expected {value!r}")
+        if f'  {key}: "{value}"' not in content.splitlines():
+            raise AssertionError(f"{path}: {key} must be quoted")
+    short_description = expected["short_description"]
+    if not 25 <= len(short_description) <= 64:
+        raise AssertionError(f"{path}: short_description must be 25-64 characters")
+    require_explicit_only(path)
 
 
 def require_optional_routes(path: Path) -> None:
@@ -189,7 +206,7 @@ def validate_contract(root: Path = ROOT) -> None:
 
     manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     validate_child_manifest(manifest)
-    require_explicit_only(child / "agents" / "openai.yaml")
+    validate_openai_metadata(child / "agents" / "openai.yaml")
 
     lines = (child / "SKILL.md").read_text(encoding="utf-8").splitlines()
     if len(lines) > MAX_ENTRYPOINT_LINES:

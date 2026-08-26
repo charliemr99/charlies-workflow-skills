@@ -124,6 +124,24 @@ class MetadataContractTests(unittest.TestCase):
             with self.assertRaisesRegex(AssertionError, "implicit invocation"):
                 CONTRACT.require_explicit_only(path)
 
+    def test_rejects_metadata_without_literal_skill_invocation(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "openai.yaml"
+            path.write_text(
+                "interface:\n"
+                "  display_name: \"Charlie's Content Workflow\"\n"
+                "  short_description: \"Evidence-backed short-form content production\"\n"
+                "  default_prompt: \"Create an evidence-backed video.\"\n"
+                "policy:\n"
+                "  allow_implicit_invocation: false\n",
+                encoding="utf-8",
+            )
+            with self.assertRaisesRegex(
+                AssertionError,
+                "\\$charlies-content-workflow",
+            ):
+                CONTRACT.validate_openai_metadata(path)
+
     def test_rejects_missing_parent_relationship(self) -> None:
         manifest = valid_manifest()
         manifest["skills"][0]["dependencies"]["bundled"] = []
