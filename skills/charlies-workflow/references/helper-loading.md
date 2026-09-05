@@ -1,26 +1,25 @@
 # Helper Loading
 
-## Purpose
+## Selection
 
-Charlie selects helper skills deliberately and only in the phase that owns
-their technique. Harness discovery and invocation syntax vary, so helper
-loading cannot depend on one product-specific command.
+A helper supplies a technique Charlie currently needs, not proof that a phase
+occurred. Load it for a concrete unresolved need or explicit user/repository
+mandate. Tier and phase alone do not require a helper. Record the reason briefly
+in existing state/notes; do not add another routing report. Once loaded, reuse it.
 
 ## Resolution Order
 
-1. In this package, resolve a declared helper as the authoritative **bundled sibling** at
-   `../<helper-name>/SKILL.md` relative to Charlie's skill root.
-2. Use the harness's native skill inventory or invocation mechanism only when
-   it resolves that same bundled sibling and adapted contract.
-3. A namespaced plugin skill such as `superpowers:brainstorming` is a fallback
-   only when the bundled sibling is absent and the plugin exposes a
-   compatible parent contract that preserves Charlie's ownership. Otherwise
-   skip the plugin and apply Charlie's phase directly.
-4. If neither the declared bundled helper nor an accepted plugin form exists,
-   record it as unavailable and follow Charlie's base phase contract directly.
-   Do not silently substitute an unrelated skill.
+1. The authoritative **bundled sibling** is `../<helper-name>/SKILL.md` relative
+   to Charlie's skill root.
+2. Native harness lookup is acceptable when it resolves that same adapted sibling.
+3. A namespaced plugin is a fallback only when the sibling is absent and its
+   contract preserves Charlie's ownership; otherwise apply the base phase directly.
+4. If unavailable, record that fact and apply the base gate without silently
+   substituting another workflow. Honor explicit requirements that mandate a helper.
 
-Read only the selected helper's `SKILL.md` and the resources that helper asks
-for in the current phase. Loading a helper does not transfer track, approval,
-artifact, review, cleanup, publication, or irreversible-action ownership away
-from Charlie.
+Read only the selected entrypoint and resources needed for the current question.
+Helpers cannot add approval pauses already resolved by the user, broaden scope,
+change lifecycle, or commit temporary artifacts. Apply their technique within
+Charlie's approved task: no blanket dependency installation, repo-wide doc
+inventory/generation for a targeted change, waiting after a design critique, or
+unrelated code deletion. Required tests, UI proof, docs and review still apply.

@@ -1,165 +1,96 @@
 # Documentation and Artifacts
 
-Read this reference during Verify and Document, then reuse the review and
-cleanup gates during Review and Publish.
-
-## Contents
-
-- Durable Documentation Gate
-- Decision Promotion Gate
-- Pre-review Artifact Safety Gate
-- Post-ship Artifact Cleanup Gate
-- Final Documentation Slot
+Read during verification, then reuse for review and terminal cleanup.
 
 ## Durable Documentation Gate
 
-Use final source, tests, and verified runtime behavior as evidence. The working
-spec and implementation plan are not documentation sources of truth.
+Inspect the affected canonical README, guide, domain docs or root Markdown
+symlink and applicable documentation checks. Use final source/tests/runtime as
+truth, not the working spec. Keep one compact documentation entry in the existing
+ledger: changed surface, evidence, canonical target, action and validation.
 
-1. Inspect affected canonical documentation, including root Markdown symlinks,
-   README/contributor/operator guides, the relevant `docs/` domain, and local
-   documentation checks.
-2. Add a compact documentation delta to the verification ledger:
+Update the smallest existing canonical section. Create a page only when there is
+no appropriate home or distinct ownership requires one. Cover changed behavior,
+contracts, configuration, operations, rollout/recovery and troubleshooting where
+applicable. Use targeted `doc-it` only when that work needs its technique; tier
+alone does not require it. Do not generate manuals or markers unrelated to scope.
 
-   | Surface | Final evidence | Canonical target | Action | Verification |
-   | --- | --- | --- | --- | --- |
-   | Behavior/API/config/operations | file, test, or runtime | existing path or missing | update/create/current/not-needed | check or rationale |
-
-3. Apply proportional rigor:
-   - Small: use targeted `doc-it` when a durable surface changed; otherwise
-     record `not-needed` with a concrete reason.
-   - Medium: use targeted `doc-it` to audit affected canonical docs even when
-     the result is `current`.
-   - Complex: use targeted `doc-it` and cover applicable behavior, contracts,
-     configuration, rollout, rollback, support, and troubleshooting. Record an
-     explicit user decline as a gap.
-4. Prefer the smallest canonical edit. Update an existing section first, add a
-   section for the same audience and lifecycle, and create a page only when no
-   canonical home exists or ownership is distinct.
-5. Document only source-backed behavior, fields, commands, environment keys,
-   states, errors, and examples. Flag unknowns instead of inventing them.
-6. Run repository documentation checks when available. Otherwise verify links,
-   paths, commands, identifiers, and examples manually against final source.
-
-The ledger must end with exactly one status: `changed`, `current`,
-`not-needed`, or `declined-with-gap`. Missing status, stale references, failed
-checks, or a gap that affects setup, use, support, rollout, or recovery blocks
-publication unless the user explicitly accepts it.
-
-Permanent docs describe source-final purpose, behavior, contracts,
-configuration, operations, troubleshooting, limitations, and verification.
-Exclude approval history, task lists, TDD transcripts, commit choreography,
-skill narration, and PR or automated-review instructions.
+Verify actual paths, identifiers, links, commands and examples; run required doc
+checks. Final status is `changed`, `current`, `not-needed`, or `declined-with-gap`.
+Missing/stale documentation or a gap affecting use, setup, support or recovery
+blocks publication unless the user explicitly accepts it. Record remaining gaps
+and approval; do not fill unknown behavior with invented documentation.
 
 ## Decision Promotion Gate
 
-Run this only after consolidated review first returns `ship` for the exact
-candidate HEAD. Keep the temporary spec, plan, state, review notes, and evidence
-available while making this decision.
+Run before freezing the first review candidate. Inspect the spec for enduring
+rationale that cannot be recovered from source/tests/docs: material architecture
+tradeoffs, rejected alternatives, cross-system contracts, security rationale,
+migration/rollback constraints or active multi-PR dependencies.
 
-1. Never promote the implementation plan or its checklist.
-2. Inspect the temporary spec for rationale that would be difficult to recover
-   from final source, tests, and canonical docs.
-3. Promote only enduring context: a non-obvious architecture tradeoff, rejected
-   alternative with lasting consequences, cross-system contract, security or
-   compliance rationale, migration/rollback constraint, or active multi-PR
-   dependency.
-4. When no promotion is warranted, record `Decision promotion: none` with a
-   concrete reason.
-5. When promotion is warranted, extract only the decision into the existing
-   ADR, architecture, product, or design location that owns it. Do not copy or
-   rename the spec wholesale.
-6. A promoted decision is concise and source-final: status, implementation
-   state, date, context, decision, material alternatives/tradeoffs,
-   consequences, and links to canonical behavior or operations docs.
-7. Keep a fuller design document only when the user/repository requires it,
-   audit traceability requires it, or active multi-PR delivery still depends on
-   it. Use a canonical non-workflow path.
-8. If promotion changes tracked canonical documentation, commit that change,
-   invalidate the prior `ship` verdict and affected evidence, and review the new
-   HEAD while temporary artifacts remain available. Cleanup may start only when
-   `ship` covers the final HEAD and promotion causes no further tracked change.
+Promote only such decisions to their canonical ADR/design/architecture home with
+context, decision, consequences and source links. Never copy the working spec,
+implementation plan, checklists or approval transcript. Keep a fuller design only
+when requested, required for traceability or still needed for active delivery.
+Otherwise record `Decision promotion: none` with its reason in the ledger.
+
+Review may expose a new durable decision: update docs before the next candidate
+and review the new HEAD. Promotion need not force a second review when it was
+already included in the first candidate.
 
 ## Pre-review Artifact Safety Gate
 
-Retain this run's plan, spec, run state, review notes, and necessary evidence
-through consolidated review and every `iterate` loop. Keep them in the verified
-ignored run directory or outside the repository. Never stage, force-add,
-commit, or push them.
+Retain spec, plan, state, review notes and evidence in the verified ignored run
+directory or outside the repo through review, publication and child checkpoints.
+Never stage, force-add, commit or push them. Inspect full Git status for unrelated
+changes; ignored run artifacts are not dirty source.
 
-The final diff may not add, modify, rename, or copy files under
-`docs/superpowers/plans/` or `docs/superpowers/specs/`. Deletions are allowed
-only for an explicitly scoped cleanup. Restore a pre-existing artifact to its
-base version; remove artifacts introduced by this run.
-
-Before freezing each review candidate, set the intended PR base and known run
-directory. Any tracked/history output or a failed ignore check blocks review:
+Before freezing a candidate, verify the intended PR base, actual run path and
+artifact safety. Example checks, with actual paths substituted:
 
 ```sh
-BASE_REF=origin/main # replace when the intended PR base differs
-RUN_DIR=output/workflow/<run-id> # replace with the actual ignored run directory
-git log --format= --name-only --diff-filter=AMCR "$BASE_REF"..HEAD -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git diff --name-only --diff-filter=AMCR "$BASE_REF"...HEAD -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git diff --name-only --diff-filter=AMCR --cached -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git diff --name-only --diff-filter=AMCR -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git ls-files --others --exclude-standard -- \
-  docs/superpowers/plans docs/superpowers/specs
+workflow_base=origin/main
+workflow_run=output/workflow/<run-id>
+git log --format= --name-only --diff-filter=AMCR "$workflow_base"..HEAD -- docs/superpowers/plans docs/superpowers/specs output/workflow
+git diff --name-only --diff-filter=AMCR "$workflow_base"...HEAD -- docs/superpowers/plans docs/superpowers/specs output/workflow
+git diff --name-only --diff-filter=AMCR --cached -- docs/superpowers/plans docs/superpowers/specs output/workflow
+git diff --name-only --diff-filter=AMCR -- docs/superpowers/plans docs/superpowers/specs output/workflow
+git ls-files --others --exclude-standard -- docs/superpowers/plans docs/superpowers/specs
 git ls-files -- output/workflow
-git check-ignore -q "$RUN_DIR" # only when RUN_DIR is inside the repository
+git check-ignore -q "$workflow_run"
 ```
 
-Ignored temporary files are expected at this stage and are not a dirty source
-tree. For an OS temporary directory, instead verify its resolved path is outside
-the repository root. Inspect full `git status --short` separately so unrelated
-or unintended changes still block the candidate commit.
+Any tracked/history output or failed ignore check blocks the candidate. Include
+any additional actual artifact paths in those checks. For an external run path,
+verify its resolved path is outside the repository instead of using check-ignore.
+If no remote exists for authorized local delivery, use the verified starting
+commit as the base. Do not invent a remote.
+
+Final diffs may not add/modify/rename/copy workflow files under
+`docs/superpowers/plans/` or `docs/superpowers/specs/`. Deletion is allowed only
+for scoped cleanup. Preserve unrelated historical artifacts; do not rewrite
+shared history to repair an accidental workflow commit without authority.
+
+Bind this proof to candidate/base/paths. At publication, check current HEAD,
+index and worktree and reuse history/diff proof if unchanged. Any relevant change
+requires affected checks again. Do not broadly stage after checking.
 
 ## Post-ship Artifact Cleanup Gate
 
-Run this only after `ship` covers the exact final HEAD and Decision Promotion is
-final. First capture the final state fields needed in the delivery report. Then
-delete this run's plan, working spec, run state, disposable evidence, and review
-notes. Do not delete unrelated historical artifacts during an ordinary run.
+After ship covers final HEAD, requested publication/local delivery succeeds and
+required child checkpoints complete, capture report values and clean only this
+run's disposable spec/plan/state/logs/review notes. Preserve delivered evidence in
+an ignored/external durable handoff location, with valid links, before cleaning.
+If delivery is blocked, keep ignored resume state and explain the blocker.
 
-Repeat the history, final-diff, staged, unstaged, untracked, and forced-tracked
-checks from the pre-review gate. Also verify the known run directory is gone.
-Any output blocks publication:
+Verify the disposable run directory is gone and HEAD/index/worktree still match
+the reviewed candidate. Reuse unchanged safety proof; rerun affected checks if
+cleanup changed tracked content, base or paths. A new HEAD always needs review.
+Never delete unrelated historical artifacts or links promised in the handoff.
 
-```sh
-test ! -e "$RUN_DIR"
-git log --format= --name-only --diff-filter=AMCR "$BASE_REF"..HEAD -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git diff --name-only --diff-filter=AMCR "$BASE_REF"...HEAD -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git diff --name-only --diff-filter=AMCR --cached -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git diff --name-only --diff-filter=AMCR -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git ls-files --others --exclude-standard -- \
-  docs/superpowers/plans docs/superpowers/specs output/workflow
-git ls-files -- output/workflow
-```
+## Final Documentation Entry
 
-Run this gate after cleanup, after staging, and immediately before push. Do not
-use broad staging after it. A failed post-ship gate returns to cleanup; a source
-change invalidates `reviewed_head` and returns to review.
-
-## Final Documentation Slot
-
-Every final report contains all six labels:
-
-```text
-Documentation
-- Status: changed | current | not-needed | declined-with-gap
-- Canonical files: <created, updated, or inspected paths>
-- Decision promotion: none (<reason>) | <canonical path and promoted decision>
-- Coverage: <durable behavior documented or reason no change was needed>
-- Validation: <command or manual source evidence>
-- Remaining gaps: none | <explicit gaps>
-```
-
-For `current` or `not-needed`, include inspected canonical paths and the
-rationale. Never link a temporary spec or plan as delivery documentation.
+Include status, relevant canonical links and coverage/validation in concise prose.
+For current/not-needed, give the concrete rationale. Mention promoted decisions
+and remaining gaps when present. Full evidence stays in its ledger/handoff;
+never present a temporary spec or plan as permanent delivery documentation.

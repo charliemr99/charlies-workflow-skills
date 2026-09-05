@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the package-level Charlie workflow contract."""
+"""Static package/document checks; these do not prove model behavior."""
 
 from __future__ import annotations
 
@@ -17,8 +17,8 @@ HALLMARK = ROOT / "skills" / "hallmark"
 
 
 def require_text(path: Path, phrases: list[str]) -> None:
-    content = path.read_text(encoding="utf-8")
-    missing = [phrase for phrase in phrases if phrase not in content]
+    content = " ".join(path.read_text(encoding="utf-8").split())
+    missing = [phrase for phrase in phrases if " ".join(phrase.split()) not in content]
     if missing:
         raise AssertionError(f"{path}: missing {missing}")
 
@@ -180,7 +180,7 @@ def main() -> None:
             "git log --format= --name-only --diff-filter=AMCR",
             "git check-ignore -q",
             "Decision promotion: none",
-            "Remaining gaps",
+            "remaining gaps",
         ],
     )
     require_text(
@@ -206,10 +206,8 @@ def main() -> None:
         [
             "### 1. Review Candidate",
             "### 2. Ship Verdict",
-            "### 3. Decision Promotion",
-            "### 4. Artifact Cleanup",
-            "### 5. GitHub Identity",
-            "### 6. Publish and Report",
+            "### 3. Identity and Publication",
+            "### 4. Terminal Cleanup and Report",
         ],
     )
     state = json.loads(

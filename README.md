@@ -125,9 +125,22 @@ Track: project
 Create an MVP for independent consultants to collect client approvals.
 ```
 
-Interactive work stops for approval of the final spec before planning.
+Track, tier, helper loading and proof scope are automatic; no Small or efficiency
+flag is required. Small Feature Track uses a concise brief and separate plan in
+conversation. Medium/Complex keep separate approved specs and implementation
+plans while reusing grounded facts and one evidence ledger. Helpers load for a
+concrete need, and unchanged proof is reused with its tested identity preserved.
+Security/permissions/payment risk, RED/GREEN for behavior, responsive UI checks,
+documentation and exact-HEAD review remain required.
+
+Interactive work stops for approval of the final spec before planning, except
+when a complete Small request already includes explicit execution authorization.
 Autonomous work records approval evidence and preserves the same ordered gates
 without routine check-ins.
+
+Durable decisions enter canonical documentation before the review candidate is
+frozen. Ignored run artifacts remain available through publication and required
+child checkpoints; terminal cleanup preserves any evidence linked in the handoff.
 
 ## Optional Integrations
 
