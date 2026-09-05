@@ -2,65 +2,41 @@
 
 ## Input
 
-- The source-final candidate diff and implementation verification ledger.
-- Planned unit, integration, browser, responsive, and documentation evidence.
-- Acceptance criteria from the approved spec or brief.
+Stable implementation, approved acceptance IDs, and accumulated proof.
 
 ## Output
 
-- Fresh verification evidence for the candidate tree.
-- Browser artifacts for each meaningful scenario and responsive state.
-- Canonical documentation status and review-ready temporary evidence.
+Current verification and source-final documentation ready for review.
 
 ## Process
 
-Before the documentation and artifact-safety steps, read
-[`documentation-and-artifacts.md`](../references/documentation-and-artifacts.md)
-and apply its Durable Documentation Gate and Pre-review Artifact Safety Gate.
-Decision promotion and cleanup belong to Review and Publish after `ship`. Do
-not preload that reference during earlier actions.
-
-1. Stabilize the diff before broad checks. Record the candidate commit or tree
-   identity so later source changes can invalidate affected evidence.
-2. Run the planned focused, integration, static, build, and regression commands
-   against the final candidate. Record exact commands and results.
-3. For browser-relevant work, use one browser session efficiently but keep two
-   distinct gates:
-   - **Functional browser QA:** execute each planned user journey, recording
-     action, expected result, actual result, pass/fail, downstream impact, and
-     screenshot/video/log artifact.
-   - **Verify Beyond the Obvious:** perform a separate UI/UX quality review of
-     the source-final behavior.
-4. Meaningful UI must be inspected at a minimum of three representative sizes:
-   `small mobile` (for example 390x844), `tablet` (768x1024), and `desktop`
-   (1440x900). Capture a screenshot for each size and important state.
-5. For Verify Beyond the Obvious, load both `emil-design-eng` and
-   `ui-ux-pro-max`. Review overflow, density, text fit, hierarchy, interaction,
-   focus/keyboard behavior, accessibility basics, loading/empty/error states,
-   supported themes, motion, and reduced-motion behavior. Functional success
-   does not imply visual or interaction quality.
-6. Treat every discovered defect as a new implementation loop: add or update a
-   regression test when feasible, fix it, rerun invalidated checks, and repeat
-   both browser gates where affected.
-7. Run `doc-it` as a targeted documentation gate under
-   `references/documentation-and-artifacts.md`. Record exactly one status:
-   `changed`, `current`, `not-needed`, or `declined-with-gap`.
-8. Prepare a provisional decision-promotion assessment from the source-final
-   behavior and working spec. Do not promote or delete it yet; consolidated
-   review may return `iterate` and still needs the approved intent, plan, state,
-   and evidence.
-9. Retain this run's spec, plan, run state, review notes, and necessary evidence
-   through review. Apply the Pre-review Artifact Safety Gate to prove they are
-   ignored or outside the repository, unstaged, untracked by Git, and absent
-   from the candidate commit and branch history.
+1. Run required repository checks and plausible regression coverage on the stable
+   candidate. Record tested content/commit, relevant configuration/environment,
+   command, result and artifact path in the existing ledger. Inspect failures.
+2. Reuse proof only while its inputs remain unchanged. Source/config/environment
+   changes invalidate affected proof; uncertain impact requires revalidation.
+   A docs-only commit may reuse tests when tested source and relevant inputs are
+   demonstrably identical. Preserve the original tested identity and record its
+   relation to the candidate; never claim tests ran on a later HEAD.
+3. For meaningful UI, use one browser session for functional QA and
+   **Verify Beyond the Obvious**: keyboard/focus/accessibility, overflow/density,
+   loading/empty/error states, themes and motion as relevant. Inspect small mobile
+   (390x844), tablet (768x1024), and desktop (1440x900), capturing important states.
+   One observation can support both gates; a screenshot alone does not prove
+   behavior. Use browser helpers only when needed to operate the harness.
+4. Choose `emil-design-eng` or `ui-ux-pro-max` only for a concrete unresolved
+   design question or explicit requirement; neither full guide is a default load.
+   Fix observed defects with regression proof, without unrelated redesign.
+5. Read [documentation-and-artifacts.md](../references/documentation-and-artifacts.md).
+   Complete the Durable Documentation Gate and Decision Promotion Gate before
+   freezing the first review candidate so durable decisions share its review.
+   Use `doc-it` only when the affected documentation needs its technique.
+6. Retain ignored/external spec, plan, state and evidence through review,
+   publication and required child checkpoints. Apply the Pre-review Artifact
+   Safety Gate; temporary files must never enter commits/history.
 
 ## Exit Test
 
-- All planned checks pass on the source-final candidate, or an exact external
-  blocker is reported without claiming completion.
-- Browser-relevant work passed functional QA; meaningful UI also passed Verify
-  Beyond the Obvious at small mobile, tablet, and desktop with linked artifacts.
-- Documentation has one final status and durable decisions are current.
-- Temporary workflow artifacts remain available for review and are verified
-  ignored, unstaged, untracked by Git, and absent from branch history.
-- The state advances through `documenting` to `reviewing`.
+All acceptance IDs have current credible proof, required UI checks passed,
+documentation has a final status, durable decisions are ready, and artifacts are
+safe. Advance to reviewing; reuse this ledger instead of copying it.

@@ -47,22 +47,37 @@ class RequireExplicitOnlyTests(unittest.TestCase):
             CONTRACT.require_explicit_only(metadata)
 
 
+class RequireTextTests(unittest.TestCase):
+    def test_accepts_wrapped_prose(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "action.md"
+            path.write_text("Pre-review Artifact\nSafety Gate", encoding="utf-8")
+            CONTRACT.require_text(path, ["Pre-review Artifact Safety Gate"])
+
+    def test_rejects_missing_words(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "action.md"
+            path.write_text("Pre-review Gate", encoding="utf-8")
+            with self.assertRaisesRegex(AssertionError, "missing"):
+                CONTRACT.require_text(path, ["Pre-review Artifact Safety Gate"])
+
+
 class RequireOrderedTextTests(unittest.TestCase):
     def test_accepts_required_lifecycle_order(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "action.md"
             path.write_text(
-                "review candidate\nship verdict\npromote decisions\ndelete artifacts\npublish\n",
+                "promote decisions\nreview candidate\nship verdict\npublish\ndelete artifacts\n",
                 encoding="utf-8",
             )
             CONTRACT.require_ordered_text(
                 path,
                 [
+                    "promote decisions",
                     "review candidate",
                     "ship verdict",
-                    "promote decisions",
-                    "delete artifacts",
                     "publish",
+                    "delete artifacts",
                 ],
             )
 
@@ -198,9 +213,9 @@ class PackageCoherenceTests(unittest.TestCase):
         content = helper_loading.read_text(encoding="utf-8")
         self.assertLess(
             content.index("bundled sibling"),
-            content.index("native skill inventory"),
+            content.index("Native harness lookup"),
         )
-        self.assertIn("compatible parent contract", content)
+        self.assertIn("contract preserves Charlie's ownership", content)
 
     def test_public_bundle_omits_competing_executing_plans_helper(self) -> None:
         self.assertFalse((ROOT / "skills" / "executing-plans").exists())

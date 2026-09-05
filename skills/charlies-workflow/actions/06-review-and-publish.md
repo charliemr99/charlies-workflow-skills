@@ -2,109 +2,70 @@
 
 ## Input
 
-- Verified source-final diff, acceptance criteria, evidence ledger, and
-  documentation status.
-- GitHub repository identity, publication constraints, and PR conventions.
+Source-final diff, approved acceptance IDs, proof ledger, documentation status,
+and publication constraints.
 
 ## Output
 
-- Consolidated review verdict for the exact candidate HEAD.
-- A draft PR by default and a structured final delivery report.
+Exact-HEAD review, draft PR or requested local delivery, and concise final report.
 
 ## Process
 
-Read
-[`documentation-and-artifacts.md`](../references/documentation-and-artifacts.md)
-for the pre-review, decision-promotion, and post-ship cleanup contracts.
+Use the gates in [documentation-and-artifacts.md](../references/documentation-and-artifacts.md);
+reuse that reference if already loaded. Artifacts are retained through review
+loops, publication and required child checkpoints.
 
 ### 1. Review Candidate
 
-1. Freeze the review candidate in a commit. Stage only intended source and
-   canonical documentation paths. Apply the Pre-review Artifact Safety Gate:
-   temporary workflow files remain available but must be ignored or outside the
-   repository, unstaged, untracked by Git, and absent from the commit/history.
-2. Review the candidate using the approved spec, implementation plan, run
-   state, and evidence across three axes:
-   - `functional`: every acceptance criterion maps to credible current
-     evidence, including downstream and failure behavior.
-   - `code`: correctness, regression risk, contracts, error handling, security,
-     tests, maintainability, and repository conventions.
-   - `relevancy`: scope discipline, duplication, unnecessary abstraction,
-     repository rules, and whether the delivered behavior solves the approved
-     problem.
-3. Apply the automatic simplicity review in
-   [`ponytail-routing.md`](../references/ponytail-routing.md). Run
-   `ponytail-review` / `ponytail:ponytail-review` on the exact candidate diff
-   when Ponytail was active or the diff has material complexity signals. Feed
-   valid findings into `relevancy`; disposition invalid findings with evidence.
-   Record `simplicity_review_status` as `not-selected`, `lean`,
-   `findings-addressed`, or `unavailable`. The line-reduction estimate is
-   informative, not an acceptance target.
-4. Assign the strictest consolidated verdict: `ship` only when every axis
-   passes; otherwise `iterate` with concrete findings.
+1. Complete durable decision promotion before freezing the candidate. Stage only
+   intended source/canonical docs and verify artifact safety. Commit the candidate.
+2. Review the exact HEAD against the spec, plan and existing ledger across
+   `functional` (acceptance and failure/downstream proof), `code` (correctness,
+   regression/security/contracts/conventions), and `relevancy` (scope, duplication,
+   unnecessary abstraction and fit). Reference evidence; do not copy all artifacts
+   into another review report. No unreviewed source changes may remain.
+3. When Ponytail was active or material complexity signals arise, apply
+   [ponytail-routing.md](../references/ponytail-routing.md) and `ponytail-review`
+   to this candidate. Feed findings into relevancy; record
+   `simplicity_review_status` as not-selected, lean, findings-addressed or unavailable.
 
 ### 2. Ship Verdict
 
-5. On `iterate`, retain and update the temporary artifacts, return to
-   implementation, fix the findings, commit the new candidate, rerun invalidated
-   checks, and review the new HEAD. Never carry a verdict across a source change.
-6. On `ship`, store the exact commit as `reviewed_head` and the evidence
-   identity as `verification_head` in run state.
+4. Use the strictest verdict: `ship` only when all axes pass, otherwise `iterate`
+   with concrete findings. On iterate, retain artifacts, fix findings, rerun
+   invalidated checks and review the new HEAD. If review changes a durable
+   decision, update its canonical documentation before the next candidate.
+5. Record exact `reviewed_head` and actual `verification_head`, including any
+   demonstrated unchanged-source relation. Never transfer ship across a new HEAD.
 
-### 3. Decision Promotion
+### 3. Identity and Publication
 
-7. Only after `ship`, run the Decision Promotion Gate. If promotion changes
-   tracked canonical documentation, commit it, invalidate `reviewed_head` and
-   affected verification, and repeat review with the temporary artifacts still
-   retained. Continue until `ship` applies to the source-final HEAD and decision
-   promotion causes no further tracked change.
+6. For a requested local-only delivery, skip GitHub steps. Otherwise determine the
+   expected GitHub account from user instructions, repo instructions, then known
+   authenticated access/provenance. Resolve genuine ambiguity with the user.
+   Owner equality is not required for an organization-owned repository. Verify
+   `gh api user --jq .login`; switch accounts only with user authorization.
+7. Prepare accurate PR text, using `pr-title-and-description` if needed. Confirm
+   HEAD equals `reviewed_head`, worktree/index have no unreviewed changes, and
+   artifact safety still holds. Reuse unchanged history evidence; changed HEAD,
+   base, artifact paths or staging require the relevant safety checks again.
+   Open a draft PR by default. No merge or deployment without authorization.
+8. Query generic CI/external review once; wait for terminal results only when
+   required by user/child rules. Pending CI is not a passing result. Publication
+   or required-check failures preserve resume state and are reported accurately.
 
-### 4. Artifact Cleanup
+### 4. Terminal Cleanup and Report
 
-8. Capture the final state values needed by the delivery report, then delete
-   this run's plan, working spec, run state, disposable evidence, and review
-   notes. Run the Post-ship Artifact Cleanup Gate against the working tree,
-   staged state, final diff, and branch history. Cleanup is blocked before
-   `ship` and must not delete unrelated historical artifacts.
-9. Verify current HEAD still equals `reviewed_head` and there are no unreviewed
-   source changes.
-
-### 5. GitHub Identity
-
-10. Determine the expected GitHub account from, in order, an explicit user
-   instruction, repository instructions, and authenticated access/provenance.
-   Confirm with the user when those sources are ambiguous. Repository-owner
-   equality is only a clue for personal repositories and is not required for an
-   organization-owned repository. Verify `gh api user --jq .login` equals the
-   expected account; switch only with user authorization and verify again.
-
-### 6. Publish and Report
-
-11. Use `pr-title-and-description` to prepare an accurate title and body. Open a
-   draft PR by default; do not merge or deploy without explicit authorization.
-12. Query generic CI and external review once after publication. Pending results
-   may be reported unless the user or a child workflow defines a stricter wait
-   contract.
-13. Produce a concise but complete final report containing:
-    - executive outcome and user-visible behavior;
-    - files or major surfaces changed and important decisions;
-    - tests run with exact outcomes;
-    - browser scenarios, all three viewport results, and artifact links;
-    - skipped checks and blockers with reasons;
-    - documentation status plus links to canonical docs;
-    - spec and plan lifecycle status, normally `retained through review, then
-      removed after ship`;
-    - consolidated review verdict and exact `reviewed_head`;
-    - selected Ponytail mode and reason plus simplicity review disposition;
-    - draft PR link and current CI/external-review state.
+9. After successful requested delivery and required child checkpoints, apply the
+   Post-ship Artifact Cleanup Gate. For explicit local-only delivery this follows
+   final local review. Preserve evidence linked in the handoff outside disposable
+   artifacts. Never clean resume state while delivery is blocked.
+10. Report outcome, meaningful verification, final documentation status/links,
+    final SHA/PR and any outstanding risks or checks. Omit irrelevant empty slots
+    and routine gate narration. Local completion must not be called published.
 
 ## Exit Test
 
-- Consolidated verdict is `ship` for the exact current HEAD.
-- `simplicity_review_status` reflects the automatic routing decision for the
-  exact candidate diff.
-- Decision promotion is final, cleanup occurred after `ship`, and the
-  publication check finds no temporary artifacts or unreviewed source changes.
-- The draft PR exists, or a user opt-out or exact publication blocker is
-  documented.
-- The final report links available evidence and the state is `published`.
+Ship covers exact final HEAD, requested delivery is evidenced, required child
+checks are complete, and this run's disposable artifacts are cleaned. Otherwise
+report the precise remaining condition and preserve state.

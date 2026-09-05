@@ -128,6 +128,6 @@ be implemented; the remaining report stays advisory and out of scope.
 
 ## Reporting
 
-The final report includes the selected mode and reason, whether automatic
-review ran, its disposition, and an unavailable helper when relevant. Do not
-let Ponytail's terse-output preference replace Charlie's required report.
+Keep the selected mode/reason and review disposition in the existing ledger.
+Include a material finding or relevant unavailable helper in final delivery;
+do not add a separate empty reporting block. Preserve Charlie's required proof.

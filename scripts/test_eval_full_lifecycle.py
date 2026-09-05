@@ -568,7 +568,7 @@ class EvalFullLifecycleTests(unittest.TestCase):
             )
             self.assertEqual(failures, [])
 
-    def test_medium_grounding_blocks_discovery_until_run_state_exists(self) -> None:
+    def test_grounding_documentation_requires_state_before_discovery(self) -> None:
         skill = (EVAL.ROOT / "skills" / "charlies-workflow" / "SKILL.md").read_text(
             encoding="utf-8"
         )
@@ -580,11 +580,11 @@ class EvalFullLifecycleTests(unittest.TestCase):
             / "01-ground-and-route.md"
         ).read_text(encoding="utf-8")
         self.assertIn(
-            "Ground and Route has not passed until that file exists",
+            "verify parseable JSON with `phase: discovery` before discovery questions or action 02",
             " ".join(skill.split()),
         )
-        self.assertIn("Do not read `02-discover-and-spec.md`", action)
-        self.assertIn("not production source or configuration", action)
+        self.assertIn("verify the file exists and parses before action 02 or discovery questions", action)
+        self.assertIn("edit restrictions do not prohibit ignored workflow state", action)
 
     def test_fixture_is_runnable_and_keeps_eval_state_untracked(self) -> None:
         fixture = EVAL.FIXTURE_PATH

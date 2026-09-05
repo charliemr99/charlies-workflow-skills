@@ -43,7 +43,9 @@ standards, and existing deployment conventions before asking discoverable
 questions. When no repository exists, ground in the supplied materials and
 workspace without inventing organizational standards.
 
-Ask questions one at a time and cover every category:
+Resolve applicable categories from supplied evidence before asking. Group
+closely related unknowns into a concise question; do not ask about facts already
+settled or force irrelevant categories into the MVP:
 
 | Category | Decisions to resolve |
 | --- | --- |
@@ -68,9 +70,9 @@ ready for release approval. `deployed` includes provisioning and live smoke
 verification but requires explicit approval of the target account/environment,
 cost, credentials path, and rollback boundary before external changes.
 
-Use `brainstorming` / `superpowers:brainstorming` for project shaping. Present
-two or three viable product/technical approaches with tradeoffs and a
-recommendation before finalizing the contract.
+Use `brainstorming` / `superpowers:brainstorming` when unresolved project shaping
+needs its technique. Compare viable alternatives for material open choices;
+do not manufacture alternatives to decisions already settled.
 
 ## 2. Product Framing
 
@@ -180,9 +182,9 @@ For each approved roadmap milestone:
 1. Re-ground against the current repository and canonical project baseline.
 2. Apply the Feature Track's Small/Medium/Complex tier to this milestone.
 3. Brainstorm unresolved milestone decisions and write a proportional spec.
-4. Obtain explicit approval of the milestone spec.
-5. Use `writing-plans` / `superpowers:writing-plans` to create a separate
-   implementation plan from that spec.
+4. Obtain milestone spec approval under the existing interactive/autonomous mode.
+5. Create a separate plan referencing the approved acceptance IDs. Use
+   `writing-plans` / `superpowers:writing-plans` only when decomposition needs it.
 6. Do not request another plan approval unless the plan introduces a product,
    architecture, security, migration, cost, or rollout decision absent from the
    approved specs.
@@ -197,6 +199,11 @@ For each approved roadmap milestone:
 Do not generate detailed implementation plans for all milestones up front.
 Write the next milestone plan against the repository state that will actually
 implement it.
+
+Apply the entrypoint's economy rules across milestones: keep product decisions
+in the canonical baseline, reference them from milestone specs, and carry forward
+proof only when its tested inputs remain unchanged. Do not rebuild the project
+discovery dossier or reread every helper for each milestone.
 
 ## 7. Project Release Gate
 
